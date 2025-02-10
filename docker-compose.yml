@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile.nginx
     ports:
-      - "80:80"
+      - "8081:80"
     volumes:
       - /var/www/my-business-card.kz/static:/app/static
       - /var/www/my-business-card.kz/media:/app/media
