@@ -2,39 +2,55 @@ version: '3.8'
 
 services:
   web:
-    build: .
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn etag.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - /var/www/my-business-card.kz/media:/app/media
       - /var/www/my-business-card.kz/static:/app/static
+      - /var/www/my-business-card.kz/media:/app/media
+      - /var/www/my-business-card.kz/logs:/app/logs
     env_file:
       - .env.prod
     depends_on:
       - db
     networks:
-      - nginx-proxy-manager_default
-      - internal
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py collectstatic --noinput &&
-             gunicorn etag.wsgi:application --bind 0.0.0.0:8000"
+      - database_network
+      - https
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - /var/www/my-business-card.kz/static:/app/static
+      - /var/www/my-business-card.kz/media:/app/media
+    networks:
+      - https
+    depends_on:
+      - web
 
   db:
-    image: postgres:13
+    image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=mycardbusines
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=Mycard-business&2025
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     networks:
-      - internal
+      - database_network
 
 volumes:
   postgres_data:
 
 networks:
-  nginx-proxy-manager_default:
+  database_network:
     external: true
-  internal:
-    driver: bridge 
+  https:
+    external: true 
