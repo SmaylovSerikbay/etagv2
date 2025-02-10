@@ -18,6 +18,12 @@ services:
       - .:/app
     env_file:
       - .env.prod
+    environment:
+      - POSTGRES_DB=mycardbusines
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Mycard-business&2025
+      - DB_HOST=77.246.247.179
+      - DB_PORT=5432
     depends_on:
       - db
     networks:
@@ -44,12 +50,10 @@ services:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - .env.prod
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=mycardbusines
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Mycard-business&2025
     networks:
       - database_network
     restart: always
