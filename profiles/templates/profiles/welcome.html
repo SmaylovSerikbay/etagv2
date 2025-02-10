@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Business Card - Электронная визитка</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="welcome-page">
+        <div class="welcome-content">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="My Business Card">
+            </div>
+            <h1>Ваша электронная визитка</h1>
+            <p class="subtitle">Создайте свой профессиональный профиль за несколько минут</p>
+            
+            <div class="welcome-actions">
+                <a href="{% url 'signup' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Создать визитку
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Войти
+                </a>
+            </div>
+
+            <div class="features">
+                <div class="feature-item">
+                    <i class="fas fa-qrcode"></i>
+                    <h3>QR-код</h3>
+                    <p>Мгновенный доступ к вашим контактам</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-share-alt"></i>
+                    <h3>Простой шеринг</h3>
+                    <p>Делитесь профилем в один клик</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>Адаптивность</h3>
+                    <p>Отлично выглядит на всех устройствах</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

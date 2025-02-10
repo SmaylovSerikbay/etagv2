@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выход | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="auth-container">
+        <h1>Вы вышли из системы</h1>
+        <div class="auth-links">
+            <a href="{% url 'login' %}">Войти снова</a>
+            <br>
+            <a href="{% url 'profiles:profile_list' %}">На главную</a>
+        </div>
+    </div>
+</body>
+</html> 

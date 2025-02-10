@@ -1,0 +1,367 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Шапка профиля -->
+        <div class="profile-header">
+            {% if profile.background %}
+                <div class="profile-background" style="background-image: url('{{ profile.background.url }}')"></div>
+            {% endif %}
+            
+            <div class="header-actions">
+                <button onclick="showQRCode()" class="action-btn" title="QR-код">
+                    <i class="fas fa-qrcode"></i>
+                </button>
+                <button onclick="shareProfile()" class="action-btn" title="Поделиться">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <button onclick="saveContact()" class="action-btn" title="Сохранить контакт">
+                    <i class="fas fa-address-card"></i>
+                </button>
+                {% if user.is_authenticated %}
+                    {% if is_owner %}
+                        <a href="{% url 'profiles:edit_profile' %}" class="action-btn desktop-only" title="Редактировать">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="logout-form desktop-only">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn" title="Выйти">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="action-btn desktop-only" title="Войти">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </a>
+                    <a href="{% url 'signup' %}" class="action-btn desktop-only" title="Регистрация">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                {% endif %}
+                <button onclick="toggleMobileMenu()" class="action-btn mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <!-- Мобильное меню -->
+            <div class="mobile-menu">
+                {% if user.is_authenticated %}
+                    {% if is_owner %}
+                        <a href="{% url 'profiles:edit_profile' %}" class="mobile-menu-item">
+                            <i class="fas fa-edit"></i>
+                            Редактировать
+                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="mobile-menu-form">
+                            {% csrf_token %}
+                            <button type="submit" class="mobile-menu-item">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Выйти
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'welcome' %}" class="mobile-menu-item">
+                        <i class="fas fa-home"></i>
+                        Главная
+                    </a>
+                    <a href="{% url 'login' %}" class="mobile-menu-item">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Войти
+                    </a>
+                    <a href="{% url 'signup' %}" class="mobile-menu-item">
+                        <i class="fas fa-user-plus"></i>
+                        Регистрация
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="profile-main-info">
+                <div class="profile-avatar" onclick="showAvatarModal()">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}">
+                    {% else %}
+                        <i class="fas fa-user"></i>
+                    {% endif %}
+                    <div class="avatar-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <h1 class="profile-name">{{ profile.name }}</h1>
+                {% if profile.position %}
+                    <div class="profile-position">{{ profile.position }}</div>
+                {% endif %}
+                {% if profile.company %}
+                    <div class="profile-company">{{ profile.company }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Модальное окно для фото профиля -->
+        <div id="avatarModal" class="avatar-modal">
+            <button class="close-avatar-modal" onclick="closeAvatarModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}" class="avatar-modal-image">
+            {% endif %}
+        </div>
+
+        <!-- Модальное окно для QR-кода -->
+        <div id="qrModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div class="qr-container">
+                    <img src="{{ profile.qr_code.url }}" alt="QR Code" class="qr-code">
+                    <button onclick="downloadQR()" class="action-button">
+                        <i class="fas fa-download"></i>
+                        Скачать QR-код
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="profile-content">
+            {% if profile.info %}
+            <div class="profile-section">
+                <div class="profile-bio">{{ profile.info }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Контакты -->
+            {% if profile.phone or profile.email or profile.website %}
+            <div class="profile-section">
+                <h2 class="section-title">Контакты</h2>
+                <div class="contact-grid">
+                    {% if profile.phone %}
+                    <a href="tel:{{ profile.phone }}" class="contact-card">
+                        <i class="fas fa-phone"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Телефон</span>
+                            <span class="contact-value">{{ profile.phone }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.email %}
+                    <a href="mailto:{{ profile.email }}" class="contact-card">
+                        <i class="fas fa-envelope"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Email</span>
+                            <span class="contact-value">{{ profile.email }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.website %}
+                    <a href="{{ profile.website }}" target="_blank" class="contact-card">
+                        <i class="fas fa-globe"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Сайт</span>
+                            <span class="contact-value">{{ profile.website }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Социальные сети -->
+            {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin %}
+            <div class="profile-section">
+                <h2 class="section-title">Социальные сети</h2>
+                <div class="social-grid">
+                    {% if profile.telegram %}
+                    <a href="https://t.me/{{ profile.telegram }}" class="social-card telegram">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span>Telegram</span>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.whatsapp %}
+                    <a href="https://wa.me/{{ profile.whatsapp }}" class="social-card whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.instagram %}
+                    <a href="https://instagram.com/{{ profile.instagram }}" class="social-card instagram">
+                        <i class="fab fa-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.facebook %}
+                    <a href="https://facebook.com/{{ profile.facebook }}" class="social-card facebook">
+                        <i class="fab fa-facebook-f"></i>
+                        <span>Facebook</span>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.linkedin %}
+                    <a href="https://linkedin.com/in/{{ profile.linkedin }}" class="social-card linkedin">
+                        <i class="fab fa-linkedin-in"></i>
+                        <span>LinkedIn</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Модальное окно
+        const modal = document.getElementById('qrModal');
+        const closeBtn = document.getElementsByClassName('close-modal')[0];
+
+        function showQRCode() {
+            modal.classList.add('show');
+        }
+
+        closeBtn.onclick = function() {
+            modal.classList.remove('show');
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        function downloadQR() {
+            const link = document.createElement('a');
+            link.href = '{{ profile.qr_code.url }}';
+            link.download = 'qr_code.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function shareProfile() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '{{ profile.name }}',
+                    text: 'Посмотрите мой профиль на E-TAG',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                copyProfileLink();
+            }
+        }
+
+        function copyProfileLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Ссылка скопирована!');
+            });
+        }
+
+        // Модальное окно для фото профиля
+        const avatarModal = document.getElementById('avatarModal');
+
+        function showAvatarModal() {
+            if (document.querySelector('.profile-avatar img')) {
+                avatarModal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeAvatarModal() {
+            avatarModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Закрытие по клику вне изображения
+        avatarModal.addEventListener('click', function(e) {
+            if (e.target === avatarModal) {
+                closeAvatarModal();
+            }
+        });
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && avatarModal.classList.contains('show')) {
+                closeAvatarModal();
+            }
+        });
+
+        // Мобильное меню
+        const mobileMenu = document.querySelector('.mobile-menu');
+        let mobileMenuOverlay;
+
+        function createOverlay() {
+            mobileMenuOverlay = document.createElement('div');
+            mobileMenuOverlay.className = 'mobile-menu-overlay';
+            document.body.appendChild(mobileMenuOverlay);
+            
+            mobileMenuOverlay.addEventListener('click', () => {
+                toggleMobileMenu();
+            });
+        }
+
+        function toggleMobileMenu() {
+            if (!mobileMenuOverlay) {
+                createOverlay();
+            }
+            
+            mobileMenu.classList.toggle('show');
+            mobileMenuOverlay.classList.toggle('show');
+            document.body.style.overflow = mobileMenu.classList.contains('show') ? 'hidden' : '';
+        }
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('show')) {
+                toggleMobileMenu();
+            }
+        });
+
+        function saveContact() {
+            // Создаем vCard
+            let vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:{{ profile.name }}
+{% if profile.position %}TITLE:{{ profile.position }}{% endif %}
+{% if profile.company %}ORG:{{ profile.company }}{% endif %}
+{% if profile.phone %}TEL;TYPE=CELL:{{ profile.phone }}{% endif %}
+{% if profile.email %}EMAIL:{{ profile.email }}{% endif %}
+{% if profile.website %}URL:{{ profile.website }}{% endif %}
+{% if profile.telegram %}X-SOCIALPROFILE;TYPE=telegram:https://t.me/{{ profile.telegram }}{% endif %}
+{% if profile.whatsapp %}X-SOCIALPROFILE;TYPE=whatsapp:https://wa.me/{{ profile.whatsapp }}{% endif %}
+{% if profile.instagram %}X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/{{ profile.instagram }}{% endif %}
+{% if profile.facebook %}X-SOCIALPROFILE;TYPE=facebook:https://facebook.com/{{ profile.facebook }}{% endif %}
+{% if profile.linkedin %}X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/{{ profile.linkedin }}{% endif %}
+END:VCARD`;
+
+            // Кодируем vCard в base64
+            const base64vCard = btoa(unescape(encodeURIComponent(vcard)));
+            
+            // Создаем Data URI
+            const dataUri = 'data:text/vcard;base64,' + base64vCard;
+
+            // На мобильных устройствах открываем напрямую
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                window.location.href = dataUri;
+            } else {
+                // На десктопе все еще используем скачивание
+                const link = document.createElement('a');
+                link.href = dataUri;
+                link.download = '{{ profile.name }}.vcf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    </script>
+</body>
+</html>

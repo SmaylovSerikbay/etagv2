@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: always
+    volumes:
+      - /var/www/my-business-card.kz/media:/app/media
+      - /var/www/my-business-card.kz/static:/app/static
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+    networks:
+      - nginx-proxy-manager_default
+      - internal
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn etag.wsgi:application --bind 0.0.0.0:8000"
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=mycardbusines
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Mycard-business&2025
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+
+networks:
+  nginx-proxy-manager_default:
+    external: true
+  internal:
+    driver: bridge 
