@@ -363,112 +363,123 @@
             const instagram = "{{ profile.instagram }}";
             const facebook = "{{ profile.facebook }}";
             const linkedin = "{{ profile.linkedin }}";
-            const avatar = "{{ profile.avatar.url|default:'' }}";
             
-            // Разбиваем имя на части (если есть пробел)
-            const nameParts = name.split(' ');
-            const lastName = nameParts.length > 1 ? nameParts.pop() : '';
-            const firstName = nameParts.join(' ');
+            // Определяем платформу
+            const ua = navigator.userAgent.toLowerCase();
+            const isAndroid = ua.indexOf("android") > -1;
+            const isIOS = /iphone|ipad|ipod/.test(ua);
             
-            // Создаем vCard
-            const socialInfo = [
-                telegram ? `Telegram: @${telegram}` : '',
-                whatsapp ? `WhatsApp: ${whatsapp}` : '',
-                instagram ? `Instagram: @${instagram}` : '',
-                facebook ? `Facebook: ${facebook}` : '',
-                linkedin ? `LinkedIn: ${linkedin}` : '',
-                website ? `Website: ${website}` : ''
-            ].filter(Boolean).join('\\n');
+            if (isAndroid) {
+                // Для Android используем Intent URL
+                const notes = [
+                    telegram ? `Telegram: @${telegram}` : '',
+                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                    instagram ? `Instagram: @${instagram}` : '',
+                    facebook ? `Facebook: ${facebook}` : '',
+                    linkedin ? `LinkedIn: ${linkedin}` : '',
+                    website ? `Website: ${website}` : ''
+                ].filter(Boolean).join('\\n');
 
-            // Функция для загрузки изображения и конвертации в BASE64
-            function loadImageAsBase64(url) {
-                return new Promise((resolve) => {
-                    if (!url) {
-                        resolve('');
-                        return;
+                const intentUrl = 
+                    `content://com.android.contacts/contacts/create_contact` +
+                    `?name=${encodeURIComponent(name)}` +
+                    (phone ? `&phone=${encodeURIComponent(phone)}` : '') +
+                    (email ? `&email=${encodeURIComponent(email)}` : '') +
+                    (company ? `&company=${encodeURIComponent(company)}` : '') +
+                    (position ? `&job_title=${encodeURIComponent(position)}` : '') +
+                    (notes ? `&notes=${encodeURIComponent(notes)}` : '');
+
+                window.location.href = intentUrl;
+
+                // Резервный вариант через intent:
+                setTimeout(() => {
+                    const backupUrl = 
+                        `intent:#Intent;action=android.intent.action.INSERT;` +
+                        `type=vnd.android.cursor.dir/contact;` +
+                        `S.name=${encodeURIComponent(name)};` +
+                        (phone ? `S.phone=${encodeURIComponent(phone)};` : '') +
+                        (email ? `S.email=${encodeURIComponent(email)};` : '') +
+                        (company ? `S.company=${encodeURIComponent(company)};` : '') +
+                        (position ? `S.title=${encodeURIComponent(position)};` : '') +
+                        (notes ? `S.notes=${encodeURIComponent(notes)};` : '') +
+                        'end';
+                    window.location.href = backupUrl;
+                }, 100);
+
+            } else if (isIOS) {
+                // Для iOS используем contacts: URL scheme
+                const contactData = {
+                    fn: name,
+                    tel: phone,
+                    email: email,
+                    org: company,
+                    title: position,
+                    url: website,
+                    note: [
+                        telegram ? `Telegram: @${telegram}` : '',
+                        whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                        instagram ? `Instagram: @${instagram}` : '',
+                        facebook ? `Facebook: ${facebook}` : '',
+                        linkedin ? `LinkedIn: ${linkedin}` : ''
+                    ].filter(Boolean).join('\\n')
+                };
+
+                // Пробуем несколько вариантов URL-схем для iOS
+                const schemes = [
+                    `contacts:add?contact=${encodeURIComponent(JSON.stringify(contactData))}`,
+                    `contacts:add/contact?fn=${encodeURIComponent(name)}` +
+                        (phone ? `&tel=${encodeURIComponent(phone)}` : '') +
+                        (email ? `&email=${encodeURIComponent(email)}` : '') +
+                        (company ? `&org=${encodeURIComponent(company)}` : '') +
+                        (position ? `&title=${encodeURIComponent(position)}` : ''),
+                    `tel:${phone}`
+                ];
+
+                // Пробуем каждую схему по очереди
+                function tryNextScheme(index) {
+                    if (index < schemes.length) {
+                        window.location.href = schemes[index];
+                        setTimeout(() => tryNextScheme(index + 1), 100);
                     }
+                }
 
-                    const img = new Image();
-                    img.crossOrigin = 'Anonymous';
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = this.width;
-                        canvas.height = this.height;
-                        
-                        // Ограничиваем размер фото
-                        const maxSize = 400;
-                        if (canvas.width > maxSize || canvas.height > maxSize) {
-                            const ratio = Math.min(maxSize / canvas.width, maxSize / canvas.height);
-                            canvas.width = canvas.width * ratio;
-                            canvas.height = canvas.height * ratio;
-                        }
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
-                        const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-                        resolve(`PHOTO;ENCODING=b;TYPE=JPEG:${base64}`);
-                    };
-                    img.onerror = function() {
-                        resolve('');
-                    };
-                    img.src = url.startsWith('http') ? url : window.location.origin + url;
-                });
-            }
+                tryNextScheme(0);
 
-            // Асинхронная функция для создания vCard с фото
-            async function createVCardWithPhoto() {
-                const photoString = avatar ? await loadImageAsBase64(avatar) : '';
-                
+            } else {
+                // Для десктопа создаем vCard для скачивания
+                const notes = [
+                    telegram ? `Telegram: @${telegram}` : '',
+                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                    instagram ? `Instagram: @${instagram}` : '',
+                    facebook ? `Facebook: ${facebook}` : '',
+                    linkedin ? `LinkedIn: ${linkedin}` : '',
+                    website ? `Website: ${website}` : ''
+                ].filter(Boolean).join('\n');
+
                 const vcard = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
                     `FN:${name}`,
-                    `N:${lastName};${firstName};;;`,
+                    `N:${name};;;;`,
                     position ? `TITLE:${position}` : '',
                     company ? `ORG:${company}` : '',
-                    phone ? `TEL;TYPE=CELL,VOICE:${phone}` : '',
-                    email ? `EMAIL;TYPE=INTERNET,HOME:${email}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL:${email}` : '',
                     website ? `URL:${website}` : '',
-                    photoString,
-                    socialInfo ? `NOTE:${socialInfo}` : '',
+                    notes ? `NOTE:${notes}` : '',
                     'END:VCARD'
-                ].filter(Boolean).join('\r\n');
+                ].filter(Boolean).join('\n');
 
-                // Создаем Blob с правильной кодировкой
-                const blob = new Blob([vcard], { 
-                    type: 'text/vcard;charset=utf-8' 
-                });
-                
-                // Создаем URL
+                const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
-                
-                // Создаем ссылку
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = `${name}.vcf`;
-                
-                // Для мобильных устройств добавляем дополнительные атрибуты
-                const ua = navigator.userAgent.toLowerCase();
-                const isMobile = /android|iphone|ipad|ipod/.test(ua);
-                
-                if (isMobile) {
-                    link.setAttribute('target', '_blank');
-                    link.setAttribute('rel', 'noopener');
-                }
-                
-                // Добавляем ссылку в DOM и кликаем
                 document.body.appendChild(link);
                 link.click();
-                
-                // Очищаем
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                }, 100);
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             }
-
-            // Запускаем создание vCard с фото
-            createVCardWithPhoto();
         }
     </script>
 </body>
