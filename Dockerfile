@@ -27,7 +27,8 @@ RUN mkdir -p /app/staticfiles /app/media /app/logs /app/profiles/static/css
 COPY . .
 
 # Копирование статических файлов
-RUN if [ -d "/app/static/css" ]; then cp -r /app/static/css/* /app/profiles/static/css/; fi
+RUN mkdir -p /app/profiles/static/css && \
+    cp -r /app/static/css/* /app/profiles/static/css/ || true
 
 # Установка правильных прав
 RUN chown -R www-data:www-data /app
