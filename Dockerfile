@@ -29,5 +29,8 @@ RUN chown -R www-data:www-data /app
 # Копирование проекта
 COPY . .
 
+# Сбор статических файлов
+RUN python manage.py collectstatic --noinput
+
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
