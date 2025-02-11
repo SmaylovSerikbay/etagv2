@@ -39,7 +39,7 @@ services:
       - media_volume:/app/media
       - logs_volume:/app/logs
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       web:
         condition: service_healthy
