@@ -30,8 +30,15 @@ RUN mkdir -p /app/staticfiles \
 # Копирование проекта
 COPY . .
 
+# Копирование статических файлов
+COPY profiles/static/css/style.css /app/profiles/static/css/
+COPY static/css/style.css /app/static/css/
+
 # Установка правильных прав
-RUN chown -R www-data:www-data /app
+RUN chown -R www-data:www-data /app \
+    && chmod -R 755 /app/staticfiles \
+    && chmod -R 755 /app/static \
+    && chmod -R 755 /app/profiles/static
 
 # Проверка наличия статических файлов
 RUN ls -la /app/static/css/ || true
