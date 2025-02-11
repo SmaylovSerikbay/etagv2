@@ -4,8 +4,12 @@ services:
   web:
     build: .
     command: >
-      bash -c "python manage.py migrate --noinput &&
+      bash -c "ls -la /app/profiles/static/css/ &&
+               echo 'Collecting static files...' &&
                python manage.py collectstatic --noinput --clear &&
+               echo 'Checking collected files...' &&
+               ls -la /app/staticfiles/css/ &&
+               python manage.py migrate --noinput &&
                gunicorn etag.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     volumes:
       - .:/app

@@ -4,6 +4,11 @@ from etag.settings.base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Временно включим DEBUG для просмотра ошибок
 
+# Добавляем отладочную информацию
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"STATIC_ROOT: {os.path.join(BASE_DIR, 'staticfiles')}")
+print(f"STATICFILES_DIRS: {[os.path.join(BASE_DIR, 'profiles', 'static')]}")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
