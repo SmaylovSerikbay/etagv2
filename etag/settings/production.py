@@ -14,10 +14,10 @@ CSRF_TRUSTED_ORIGINS = ['http://my-business-card.kz', 'https://my-business-card.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'etag',
-        'USER': 'etag',
-        'PASSWORD': 'etag',
-        'HOST': 'db',
+        'NAME': 'mycardbusines',
+        'USER': 'admin',
+        'PASSWORD': 'Mycard-business&2025',
+        'HOST': '77.246.247.179',
         'PORT': '5432',
     }
 }
