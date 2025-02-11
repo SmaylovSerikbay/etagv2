@@ -24,15 +24,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/staticfiles \
     && mkdir -p /app/media \
     && mkdir -p /app/logs \
-    && mkdir -p /app/profiles/static/css \
     && mkdir -p /app/static/css
 
 # Копирование проекта
 COPY . .
-
-# Копирование статических файлов
-RUN cp -r profiles/static/* /app/profiles/static/ \
-    && cp -r static/* /app/static/ 2>/dev/null || true
 
 # Установка правильных прав
 RUN chown -R www-data:www-data /app \

@@ -34,7 +34,8 @@ DATABASES = {
 STATIC_URL = '/static/'
 STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [
-    '/app/static',  # Основная директория для статики
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
 
 # Отключаем временно сжатие статики для отладки
