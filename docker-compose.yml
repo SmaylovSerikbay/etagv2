@@ -15,7 +15,11 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=etag.settings.production
       - PYTHONUNBUFFERED=1
-      - SECRET_KEY=django-insecure-7)g#$%^&*()_+=-0987654321qwertyuiop[]asdfghjkl;zxcvbnm,.
+      - DB_NAME=mycardbusines
+      - DB_USER=admin
+      - DB_PASSWORD=Mycard-business&2025
+      - DB_HOST=77.246.247.179
+      - DB_PORT=5432
     networks:
       - web_network
     healthcheck:
