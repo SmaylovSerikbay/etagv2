@@ -357,6 +357,13 @@
             const company = "{{ profile.company }}";
             const phone = "{{ profile.phone }}";
             const email = "{{ profile.email }}";
+            const website = "{{ profile.website }}";
+            const telegram = "{{ profile.telegram }}";
+            const whatsapp = "{{ profile.whatsapp }}";
+            const instagram = "{{ profile.instagram }}";
+            const facebook = "{{ profile.facebook }}";
+            const linkedin = "{{ profile.linkedin }}";
+            const avatar = "{{ profile.avatar.url|default:'' }}";
             
             // Определяем мобильную платформу
             const ua = navigator.userAgent.toLowerCase();
@@ -364,10 +371,26 @@
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
             if (isAndroid) {
-                // Для Android используем более простой Intent
-                window.location.href = `intent:#Intent;action=android.intent.action.INSERT_OR_EDIT;type=vnd.android.cursor.item/contact;S.name=${encodeURIComponent(name)};S.phone=${encodeURIComponent(phone)};end`;
+                // Для Android формируем Intent с максимумом данных
+                const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;` +
+                    `S.name=${encodeURIComponent(name)};` +
+                    (position ? `S.company=${encodeURIComponent(position)};` : '') +
+                    (company ? `S.company=${encodeURIComponent(company)};` : '') +
+                    (phone ? `S.phone=${encodeURIComponent(phone)};` : '') +
+                    (email ? `S.email=${encodeURIComponent(email)};` : '') +
+                    (website ? `S.website=${encodeURIComponent(website)};` : '') +
+                    `end`;
+                window.location.href = intentUrl;
             } else if (isIOS) {
-                // Для iOS используем прямую ссылку на контакты
+                // Для iOS создаем расширенный vCard
+                const socialNotes = [
+                    telegram ? `Telegram: @${telegram}` : '',
+                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                    instagram ? `Instagram: @${instagram}` : '',
+                    facebook ? `Facebook: ${facebook}` : '',
+                    linkedin ? `LinkedIn: ${linkedin}` : ''
+                ].filter(Boolean).join('\\n');
+
                 const vcfData = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
@@ -375,24 +398,53 @@
                     `N:${name};;;;`,
                     position ? `TITLE:${position}` : '',
                     company ? `ORG:${company}` : '',
-                    phone ? `TEL;TYPE=CELL:${phone}` : '',
-                    email ? `EMAIL;TYPE=WORK:${email}` : '',
+                    phone ? `TEL;type=CELL;type=VOICE:${phone}` : '',
+                    email ? `EMAIL;type=INTERNET;type=WORK:${email}` : '',
+                    website ? `URL:${website}` : '',
+                    socialNotes ? `NOTE:${socialNotes}` : '',
+                    avatar ? `PHOTO;VALUE=URL:${window.location.origin}${avatar}` : '',
                     'END:VCARD'
                 ].filter(Boolean).join('\n');
 
-                const base64 = btoa(unescape(encodeURIComponent(vcfData)));
-                window.location.href = `contacts:${base64}`;
+                // Пробуем несколько схем для iOS
+                const schemes = [
+                    `contacts:add?contact=${encodeURIComponent(vcfData)}`,
+                    `contacts:${btoa(unescape(encodeURIComponent(vcfData)))}`,
+                    `addressbook:${btoa(unescape(encodeURIComponent(vcfData)))}`
+                ];
+
+                // Пробуем открыть каждую схему по очереди
+                function tryNextScheme(index) {
+                    if (index < schemes.length) {
+                        window.location.href = schemes[index];
+                        setTimeout(() => tryNextScheme(index + 1), 100);
+                    }
+                }
+                tryNextScheme(0);
             } else {
-                // Для десктопа создаем vCard
-                const vcard = `BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-N:${name};;;;
-${position ? `TITLE:${position}\n` : ''}
-${company ? `ORG:${company}\n` : ''}
-${phone ? `TEL;TYPE=CELL:${phone}\n` : ''}
-${email ? `EMAIL;TYPE=WORK:${email}\n` : ''}
-END:VCARD`;
+                // Для десктопа создаем расширенный vCard для скачивания
+                const socialNotes = [
+                    telegram ? `Telegram: @${telegram}` : '',
+                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                    instagram ? `Instagram: @${instagram}` : '',
+                    facebook ? `Facebook: ${facebook}` : '',
+                    linkedin ? `LinkedIn: ${linkedin}` : ''
+                ].filter(Boolean).join('\n');
+
+                const vcard = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `FN:${name}`,
+                    `N:${name};;;;`,
+                    position ? `TITLE:${position}` : '',
+                    company ? `ORG:${company}` : '',
+                    phone ? `TEL;type=CELL;type=VOICE:${phone}` : '',
+                    email ? `EMAIL;type=INTERNET;type=WORK:${email}` : '',
+                    website ? `URL:${website}` : '',
+                    socialNotes ? `NOTE:${socialNotes}` : '',
+                    avatar ? `PHOTO;VALUE=URL:${window.location.origin}${avatar}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\n');
 
                 const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
