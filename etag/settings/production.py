@@ -32,7 +32,7 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = '/app/staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
@@ -66,7 +66,7 @@ MIDDLEWARE = [
 
 # Whitenoise specific settings
 WHITENOISE_USE_FINDERS = True
-WHITENOISE_ROOT = STATIC_ROOT
+WHITENOISE_ROOT = None
 WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
