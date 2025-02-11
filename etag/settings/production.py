@@ -1,5 +1,8 @@
 import os
 from etag.settings.base import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Временно включим DEBUG для просмотра ошибок
@@ -34,6 +37,10 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
 
+logger.info(f"STATIC_ROOT: {STATIC_ROOT}")
+logger.info(f"STATICFILES_DIRS: {STATICFILES_DIRS}")
+logger.info(f"BASE_DIR: {BASE_DIR}")
+
 # Whitenoise settings
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -47,7 +54,7 @@ MIDDLEWARE = [
 ]
 
 # Whitenoise specific settings
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_ROOT = None  # Отключаем root директорию
 WHITENOISE_MAX_AGE = 31536000
