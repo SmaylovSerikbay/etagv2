@@ -34,8 +34,15 @@ DATABASES = {
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
+
+# Добавим отладочную информацию
+print("Checking static directories:")
+for static_dir in STATICFILES_DIRS:
+    print(f"Directory {static_dir} exists: {os.path.exists(static_dir)}")
+print(f"STATIC_ROOT directory exists: {os.path.exists(STATIC_ROOT)}")
 
 logger.info(f"STATIC_ROOT: {STATIC_ROOT}")
 logger.info(f"STATICFILES_DIRS: {STATICFILES_DIRS}")

@@ -21,7 +21,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Создание необходимых директорий
-RUN mkdir -p /app/staticfiles /app/media /app/logs /app/profiles/static/css /app/static/css
+RUN mkdir -p /app/staticfiles \
+    && mkdir -p /app/media \
+    && mkdir -p /app/logs \
+    && mkdir -p /app/profiles/static/css \
+    && mkdir -p /app/static/css
 
 # Копирование проекта
 COPY . .
