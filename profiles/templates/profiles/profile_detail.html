@@ -370,7 +370,7 @@
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
             if (isAndroid) {
-                // Для Android используем прямой URL
+                // Для Samsung/Android используем прямой Intent
                 const socialInfo = [
                     telegram ? `Telegram: @${telegram}` : '',
                     whatsapp ? `WhatsApp: ${whatsapp}` : '',
@@ -380,82 +380,106 @@
                     website ? `Website: ${website}` : ''
                 ].filter(Boolean).join('\\n');
 
-                // Пробуем несколько вариантов URL для Android
-                const urls = [
-                    // Вариант 1: Прямой URL для контактов
-                    `tel:${phone}?name=${encodeURIComponent(name)}&org=${encodeURIComponent(company)}`,
-                    
-                    // Вариант 2: Intent URL для контактов
-                    `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;` +
+                // Создаем Intent URL для Samsung
+                const intentUrl = 
+                    `intent://com.android.contacts/contact/create#Intent;` +
+                    `scheme=content;` +
+                    `action=android.intent.action.INSERT;` +
+                    `type=vnd.android.cursor.dir/raw_contact;` +
                     `S.name=${encodeURIComponent(name)};` +
                     (phone ? `S.phone=${encodeURIComponent(phone)};` : '') +
                     (email ? `S.email=${encodeURIComponent(email)};` : '') +
                     (company ? `S.company=${encodeURIComponent(company)};` : '') +
                     (position ? `S.title=${encodeURIComponent(position)};` : '') +
                     (socialInfo ? `S.notes=${encodeURIComponent(socialInfo)};` : '') +
-                    'end',
-                    
-                    // Вариант 3: Контент URL
-                    `content://com.android.contacts/contacts/create?name=${encodeURIComponent(name)}` +
-                    (phone ? `&phone=${encodeURIComponent(phone)}` : '') +
-                    (email ? `&email=${encodeURIComponent(email)}` : '') +
-                    (company ? `&company=${encodeURIComponent(company)}` : '') +
-                    (position ? `&job_title=${encodeURIComponent(position)}` : '')
-                ];
+                    'end';
 
-                // Функция для последовательной проверки URL
-                function tryNextUrl(index) {
-                    if (index < urls.length) {
-                        window.location.href = urls[index];
-                        setTimeout(() => tryNextUrl(index + 1), 300);
-                    } else {
-                        // Если ни один URL не сработал, создаем vCard
-                        createAndDownloadVCard();
-                    }
-                }
-
-                tryNextUrl(0);
+                window.location.href = intentUrl;
 
             } else if (isIOS) {
-                // Для iOS создаем vCard
-                createAndDownloadVCard();
+                // Для iOS используем contacts-ui:add
+                const contactData = {
+                    givenName: name,
+                    organizationName: company,
+                    jobTitle: position,
+                    phoneNumbers: [{
+                        type: "mobile",
+                        value: phone
+                    }],
+                    emailAddresses: [{
+                        type: "work",
+                        value: email
+                    }],
+                    urls: [{
+                        type: "website",
+                        value: website
+                    }],
+                    note: [
+                        telegram ? `Telegram: @${telegram}` : '',
+                        whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                        instagram ? `Instagram: @${instagram}` : '',
+                        facebook ? `Facebook: ${facebook}` : '',
+                        linkedin ? `LinkedIn: ${linkedin}` : ''
+                    ].filter(Boolean).join('\\n')
+                };
+
+                // Пробуем открыть через contacts-ui
+                window.location.href = `contacts-ui:add?contact=${encodeURIComponent(JSON.stringify(contactData))}`;
+
+                // Если не сработало, создаем vCard с автоматическим открытием
+                setTimeout(() => {
+                    const vcard = [
+                        'BEGIN:VCARD',
+                        'VERSION:3.0',
+                        `FN:${name}`,
+                        `N:${name};;;;`,
+                        position ? `TITLE:${position}` : '',
+                        company ? `ORG:${company}` : '',
+                        phone ? `TEL;type=CELL;type=pref:${phone}` : '',
+                        email ? `EMAIL;type=INTERNET;type=pref:${email}` : '',
+                        website ? `URL:${website}` : '',
+                        'END:VCARD'
+                    ].filter(Boolean).join('\n');
+
+                    const blob = new Blob([vcard], { type: 'text/x-vcard' });
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    // Создаем ссылку и автоматически открываем
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.type = 'text/x-vcard';
+                    link.setAttribute('rel', 'noopener');
+                    link.setAttribute('target', '_blank');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
             } else {
                 // Для десктопа создаем vCard
-                createAndDownloadVCard();
+                const vcard = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `FN:${name}`,
+                    `N:${name};;;;`,
+                    position ? `TITLE:${position}` : '',
+                    company ? `ORG:${company}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL:${email}` : '',
+                    website ? `URL:${website}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\n');
+
+                const blob = new Blob([vcard], { type: 'text/vcard' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${name}.vcf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             }
-        }
-
-        // Вспомогательная функция для создания vCard
-        function createAndDownloadVCard() {
-            const name = "{{ profile.name }}";
-            const position = "{{ profile.position }}";
-            const company = "{{ profile.company }}";
-            const phone = "{{ profile.phone }}";
-            const email = "{{ profile.email }}";
-            const website = "{{ profile.website }}";
-            
-            const vcard = [
-                'BEGIN:VCARD',
-                'VERSION:3.0',
-                `FN:${name}`,
-                `N:${name};;;;`,
-                position ? `TITLE:${position}` : '',
-                company ? `ORG:${company}` : '',
-                phone ? `TEL;TYPE=CELL,VOICE:${phone}` : '',
-                email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-                website ? `URL:${website}` : '',
-                'END:VCARD'
-            ].filter(Boolean).join('\n');
-
-            const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${name}.vcf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>
