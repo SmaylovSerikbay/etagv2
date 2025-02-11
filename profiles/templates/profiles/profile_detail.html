@@ -363,28 +363,64 @@
             const instagram = "{{ profile.instagram }}";
             const facebook = "{{ profile.facebook }}";
             const linkedin = "{{ profile.linkedin }}";
-            
-            // Определяем платформу
-            const ua = navigator.userAgent.toLowerCase();
-            const isAndroid = ua.indexOf("android") > -1;
-            const isIOS = /iphone|ipad|ipod/.test(ua);
-            
-            if (isAndroid) {
-                // Для Android используем простой intent
-                const intentUrl = 
-                    `intent:#Intent;` +
-                    `action=android.intent.action.INSERT;` +
-                    `type=vnd.android.cursor.dir/contact;` +
-                    `S.name=${encodeURIComponent(name)};` +
-                    (phone ? `S.phone=${encodeURIComponent(phone)};` : '') +
-                    (email ? `S.email=${encodeURIComponent(email)};` : '') +
-                    (company ? `S.company=${encodeURIComponent(company)};` : '') +
-                    (position ? `S.title=${encodeURIComponent(position)};` : '') +
-                    'end';
 
-                window.location.href = intentUrl;
-            } else {
-                // Для iOS и десктопа создаем простой vCard
+            // Создаем модальное окно с вариантами
+            const modalHtml = `
+                <div id="saveContactModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-modal" onclick="closeSaveContactModal()">&times;</span>
+                        <h2 style="text-align: center; margin-bottom: 20px;">Выберите способ сохранения</h2>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button onclick="openContacts()" class="action-button" style="width: 100%;">
+                                <i class="fas fa-address-book"></i>
+                                Открыть контакты
+                            </button>
+                            <button onclick="downloadVCard()" class="action-button" style="width: 100%;">
+                                <i class="fas fa-download"></i>
+                                Скачать vCard
+                            </button>
+                            <button onclick="copyToClipboard()" class="action-button" style="width: 100%;">
+                                <i class="fas fa-copy"></i>
+                                Скопировать данные
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Добавляем модальное окно на страницу
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Показываем модальное окно
+            const modal = document.getElementById('saveContactModal');
+            modal.classList.add('show');
+
+            // Функция закрытия модального окна
+            window.closeSaveContactModal = function() {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 300);
+            };
+
+            // Закрытие по клику вне окна
+            modal.onclick = function(event) {
+                if (event.target == modal) {
+                    closeSaveContactModal();
+                }
+            };
+
+            // Открыть контакты
+            window.openContacts = function() {
+                const ua = navigator.userAgent.toLowerCase();
+                const isAndroid = ua.indexOf("android") > -1;
+                
+                if (isAndroid) {
+                    window.location.href = `tel:${phone}`;
+                } else {
+                    window.location.href = `tel://${phone}`;
+                }
+            };
+
+            // Скачать vCard
+            window.downloadVCard = function() {
                 const vcard = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
@@ -407,7 +443,30 @@
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-            }
+                closeSaveContactModal();
+            };
+
+            // Копировать в буфер обмена
+            window.copyToClipboard = function() {
+                const contactInfo = [
+                    `Имя: ${name}`,
+                    position ? `Должность: ${position}` : '',
+                    company ? `Компания: ${company}` : '',
+                    phone ? `Телефон: ${phone}` : '',
+                    email ? `Email: ${email}` : '',
+                    website ? `Сайт: ${website}` : '',
+                    telegram ? `Telegram: @${telegram}` : '',
+                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
+                    instagram ? `Instagram: @${instagram}` : '',
+                    facebook ? `Facebook: ${facebook}` : '',
+                    linkedin ? `LinkedIn: ${linkedin}` : ''
+                ].filter(Boolean).join('\n');
+
+                navigator.clipboard.writeText(contactInfo).then(() => {
+                    alert('Контактные данные скопированы в буфер обмена');
+                    closeSaveContactModal();
+                });
+            };
         }
     </script>
 </body>
