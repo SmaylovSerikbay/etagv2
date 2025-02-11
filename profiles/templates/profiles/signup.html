@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация | E-TAG</title>
+    <title>Регистрация | My Business Card</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,29 +25,53 @@
         
         <form method="post" class="auth-form">
             {% csrf_token %}
-            {% for field in form %}
+            
             <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                <small class="help-text">{{ field.help_text }}</small>
+                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="error">{{ form.username.errors.0 }}</div>
                 {% endif %}
-                {% if field.errors %}
-                <div class="error">{{ field.errors|join:", " }}</div>
+                {% if form.username.help_text %}
+                    <div class="help-text">{{ form.username.help_text }}</div>
                 {% endif %}
             </div>
-            {% endfor %}
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div class="error">{{ form.password1.errors.0 }}</div>
+                {% endif %}
+                {% if form.password1.help_text %}
+                    <div class="help-text">{{ form.password1.help_text }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="error">{{ form.password2.errors.0 }}</div>
+                {% endif %}
+            </div>
+
             <button type="submit" class="submit-button">
                 <i class="fas fa-user-plus"></i>
-                Создать аккаунт
+                Зарегистрироваться
             </button>
         </form>
-        
+
         <div class="auth-links">
-            <a href="{% url 'login' %}">
-                <i class="fas fa-sign-in-alt"></i>
-                Уже есть аккаунт? Войти
-            </a>
+            <p>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
         </div>
     </div>
 </body>
