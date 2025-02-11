@@ -353,74 +353,30 @@
             const phone = "{{ profile.phone }}";
             const email = "{{ profile.email }}";
             
-            // Создаем текст для шаринга
-            const contactText = `
-Имя: ${name}
-${position ? `Должность: ${position}\n` : ''}
-${company ? `Компания: ${company}\n` : ''}
-${phone ? `Телефон: ${phone}\n` : ''}
-${email ? `Email: ${email}` : ''}`.trim();
-
-            // Пробуем использовать Web Share API
-            if (navigator.share) {
-                navigator.share({
-                    title: `Контакт: ${name}`,
-                    text: contactText,
-                    url: window.location.href
-                }).catch(() => {
-                    // Если Web Share API не сработал, пробуем другие методы
-                    fallbackSaveContact();
-                });
-            } else {
-                fallbackSaveContact();
-            }
-        }
-
-        function fallbackSaveContact() {
-            const name = "{{ profile.name }}";
-            const position = "{{ profile.position }}";
-            const company = "{{ profile.company }}";
-            const phone = "{{ profile.phone }}";
-            const email = "{{ profile.email }}";
-            
             // Определяем мобильную платформу
             const ua = navigator.userAgent.toLowerCase();
             const isAndroid = ua.indexOf("android") > -1;
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
             if (isAndroid) {
-                // Для Android пробуем несколько вариантов
-                if (phone) {
-                    // Сначала пробуем открыть через tel:
-                    window.location.href = `tel:${phone}`;
-                    
-                    // Затем пробуем открыть контакты
-                    setTimeout(() => {
-                        window.location.href = `content://com.android.contacts/data/phones/${phone}`;
-                    }, 300);
-                    
-                    // И наконец, пробуем Intent
-                    setTimeout(() => {
-                        const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${name};S.company=${company};S.phone=${phone};S.email=${email};S.title=${position};end`;
-                        window.location.href = intentUrl;
-                    }, 600);
-                }
+                // Для Android используем более простой Intent
+                window.location.href = `intent:#Intent;action=android.intent.action.INSERT_OR_EDIT;type=vnd.android.cursor.item/contact;S.name=${encodeURIComponent(name)};S.phone=${encodeURIComponent(phone)};end`;
             } else if (isIOS) {
-                // Для iOS пробуем несколько вариантов
-                if (phone) {
-                    // Сначала открываем через tel:
-                    window.location.href = `tel:${phone}`;
-                    
-                    // Затем пробуем открыть контакты
-                    setTimeout(() => {
-                        window.location.href = `contacts://`;
-                    }, 300);
-                    
-                    // И наконец, пробуем через sms
-                    setTimeout(() => {
-                        window.location.href = `sms:${phone}`;
-                    }, 600);
-                }
+                // Для iOS используем прямую ссылку на контакты
+                const vcfData = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `FN:${name}`,
+                    `N:${name};;;;`,
+                    position ? `TITLE:${position}` : '',
+                    company ? `ORG:${company}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL;TYPE=WORK:${email}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\n');
+
+                const base64 = btoa(unescape(encodeURIComponent(vcfData)));
+                window.location.href = `contacts:${base64}`;
             } else {
                 // Для десктопа создаем vCard
                 const vcard = `BEGIN:VCARD
