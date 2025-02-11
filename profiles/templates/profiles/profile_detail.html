@@ -347,15 +347,57 @@
         });
 
         function saveContactDirect() {
-            const name = "{{ profile.name }}";
-            const position = "{{ profile.position }}";
-            const company = "{{ profile.company }}";
-            const phone = "{{ profile.phone }}";
-            const email = "{{ profile.email }}";
-            const website = "{{ profile.website }}";
+            const name = encodeURIComponent("{{ profile.name }}");
+            const position = encodeURIComponent("{{ profile.position }}");
+            const company = encodeURIComponent("{{ profile.company }}");
+            const phone = encodeURIComponent("{{ profile.phone }}");
+            const email = encodeURIComponent("{{ profile.email }}");
             
-            // Создаем vCard
-            const vcard = `BEGIN:VCARD
+            // Определяем мобильную платформу
+            const ua = navigator.userAgent.toLowerCase();
+            const isAndroid = ua.indexOf("android") > -1;
+            const isIOS = /iphone|ipad|ipod/.test(ua);
+            
+            if (isAndroid) {
+                // Для Android используем Intent для прямого создания контакта
+                const intentUrl = `intent://contacts/people/#Intent;scheme=content;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${name};S.company=${company};S.phone=${phone};S.email=${email};S.title=${position};end`;
+                window.location.href = intentUrl;
+            } else if (isIOS) {
+                // Для iOS используем нативную схему для добавления контакта
+                const vcfData = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `FN:${name}`,
+                    `N:${name};;;;`,
+                    position ? `TITLE:${position}` : '',
+                    company ? `ORG:${company}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL;TYPE=WORK:${email}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\n');
+
+                // Создаем base64 строку из vCard
+                const base64 = btoa(unescape(encodeURIComponent(vcfData)));
+                
+                // Пробуем разные схемы для iOS
+                const schemes = [
+                    `contacts:add?contact=${base64}`,
+                    `addressbook:add?contact=${base64}`,
+                    `ms-contact-add:?contact=${base64}`
+                ];
+
+                // Пробуем каждую схему по очереди
+                function tryNextScheme(index = 0) {
+                    if (index < schemes.length) {
+                        window.location.href = schemes[index];
+                        setTimeout(() => tryNextScheme(index + 1), 100);
+                    }
+                }
+
+                tryNextScheme();
+            } else {
+                // Для десктопа создаем и скачиваем vCard
+                const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:${name}
 N:${name};;;;
@@ -363,47 +405,8 @@ ${position ? `TITLE:${position}\n` : ''}
 ${company ? `ORG:${company}\n` : ''}
 ${phone ? `TEL;TYPE=CELL:${phone}\n` : ''}
 ${email ? `EMAIL;TYPE=WORK:${email}\n` : ''}
-${website ? `URL:${website}\n` : ''}
 END:VCARD`;
 
-            // Определяем мобильную платформу
-            const ua = navigator.userAgent.toLowerCase();
-            const isAndroid = ua.indexOf("android") > -1;
-            const isIOS = /iphone|ipad|ipod/.test(ua);
-            
-            if (isAndroid || isIOS) {
-                // Для мобильных устройств создаем Data URI
-                const blob = new Blob([vcard], { type: 'text/vcard' });
-                const url = window.URL.createObjectURL(blob);
-                
-                // Создаем временную ссылку
-                const tempLink = document.createElement('a');
-                tempLink.href = url;
-                tempLink.target = '_blank';
-                tempLink.download = `${name}.vcf`;
-                
-                // Добавляем ссылку в DOM и эмулируем клик
-                document.body.appendChild(tempLink);
-                tempLink.click();
-                
-                // Удаляем временную ссылку
-                setTimeout(() => {
-                    document.body.removeChild(tempLink);
-                    window.URL.revokeObjectURL(url);
-                }, 100);
-
-                // Дополнительно пробуем открыть через нативные приложения
-                if (isAndroid) {
-                    setTimeout(() => {
-                        window.location.href = `content://contacts/people`;
-                    }, 500);
-                } else if (isIOS) {
-                    setTimeout(() => {
-                        window.location.href = `contacts://`;
-                    }, 500);
-                }
-            } else {
-                // Для десктопа оставляем текущее поведение
                 const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
