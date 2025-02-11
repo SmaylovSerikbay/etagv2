@@ -21,7 +21,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Создание необходимых директорий
-RUN mkdir -p /app/static /app/media /app/logs
+RUN mkdir -p /app/staticfiles /app/media /app/logs /app/static
 
 # Установка правильных прав
 RUN chown -R www-data:www-data /app
@@ -29,8 +29,8 @@ RUN chown -R www-data:www-data /app
 # Копирование проекта
 COPY . .
 
-# Сбор статических файлов
-RUN python manage.py collectstatic --noinput
+# Копирование статических файлов в нужную директорию
+RUN cp -r profiles/static/* /app/static/
 
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
