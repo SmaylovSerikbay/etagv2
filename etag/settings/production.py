@@ -29,7 +29,7 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = '/app/staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
@@ -47,7 +47,7 @@ MIDDLEWARE = [
 ]
 
 # Whitenoise specific settings
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'  # Используем стандартное хранилище
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_ROOT = None  # Отключаем root директорию
 WHITENOISE_MAX_AGE = 31536000
