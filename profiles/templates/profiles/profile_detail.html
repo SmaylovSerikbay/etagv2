@@ -347,11 +347,41 @@
         });
 
         function saveContactDirect() {
-            const name = encodeURIComponent("{{ profile.name }}");
-            const position = encodeURIComponent("{{ profile.position }}");
-            const company = encodeURIComponent("{{ profile.company }}");
-            const phone = encodeURIComponent("{{ profile.phone }}");
-            const email = encodeURIComponent("{{ profile.email }}");
+            const name = "{{ profile.name }}";
+            const position = "{{ profile.position }}";
+            const company = "{{ profile.company }}";
+            const phone = "{{ profile.phone }}";
+            const email = "{{ profile.email }}";
+            
+            // Создаем текст для шаринга
+            const contactText = `
+Имя: ${name}
+${position ? `Должность: ${position}\n` : ''}
+${company ? `Компания: ${company}\n` : ''}
+${phone ? `Телефон: ${phone}\n` : ''}
+${email ? `Email: ${email}` : ''}`.trim();
+
+            // Пробуем использовать Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: `Контакт: ${name}`,
+                    text: contactText,
+                    url: window.location.href
+                }).catch(() => {
+                    // Если Web Share API не сработал, пробуем другие методы
+                    fallbackSaveContact();
+                });
+            } else {
+                fallbackSaveContact();
+            }
+        }
+
+        function fallbackSaveContact() {
+            const name = "{{ profile.name }}";
+            const position = "{{ profile.position }}";
+            const company = "{{ profile.company }}";
+            const phone = "{{ profile.phone }}";
+            const email = "{{ profile.email }}";
             
             // Определяем мобильную платформу
             const ua = navigator.userAgent.toLowerCase();
@@ -359,44 +389,40 @@
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
             if (isAndroid) {
-                // Для Android используем Intent для прямого создания контакта
-                const intentUrl = `intent://contacts/people/#Intent;scheme=content;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${name};S.company=${company};S.phone=${phone};S.email=${email};S.title=${position};end`;
-                window.location.href = intentUrl;
-            } else if (isIOS) {
-                // Для iOS используем нативную схему для добавления контакта
-                const vcfData = [
-                    'BEGIN:VCARD',
-                    'VERSION:3.0',
-                    `FN:${name}`,
-                    `N:${name};;;;`,
-                    position ? `TITLE:${position}` : '',
-                    company ? `ORG:${company}` : '',
-                    phone ? `TEL;TYPE=CELL:${phone}` : '',
-                    email ? `EMAIL;TYPE=WORK:${email}` : '',
-                    'END:VCARD'
-                ].filter(Boolean).join('\n');
-
-                // Создаем base64 строку из vCard
-                const base64 = btoa(unescape(encodeURIComponent(vcfData)));
-                
-                // Пробуем разные схемы для iOS
-                const schemes = [
-                    `contacts:add?contact=${base64}`,
-                    `addressbook:add?contact=${base64}`,
-                    `ms-contact-add:?contact=${base64}`
-                ];
-
-                // Пробуем каждую схему по очереди
-                function tryNextScheme(index = 0) {
-                    if (index < schemes.length) {
-                        window.location.href = schemes[index];
-                        setTimeout(() => tryNextScheme(index + 1), 100);
-                    }
+                // Для Android пробуем несколько вариантов
+                if (phone) {
+                    // Сначала пробуем открыть через tel:
+                    window.location.href = `tel:${phone}`;
+                    
+                    // Затем пробуем открыть контакты
+                    setTimeout(() => {
+                        window.location.href = `content://com.android.contacts/data/phones/${phone}`;
+                    }, 300);
+                    
+                    // И наконец, пробуем Intent
+                    setTimeout(() => {
+                        const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${name};S.company=${company};S.phone=${phone};S.email=${email};S.title=${position};end`;
+                        window.location.href = intentUrl;
+                    }, 600);
                 }
-
-                tryNextScheme();
+            } else if (isIOS) {
+                // Для iOS пробуем несколько вариантов
+                if (phone) {
+                    // Сначала открываем через tel:
+                    window.location.href = `tel:${phone}`;
+                    
+                    // Затем пробуем открыть контакты
+                    setTimeout(() => {
+                        window.location.href = `contacts://`;
+                    }, 300);
+                    
+                    // И наконец, пробуем через sms
+                    setTimeout(() => {
+                        window.location.href = `sms:${phone}`;
+                    }, 600);
+                }
             } else {
-                // Для десктопа создаем и скачиваем vCard
+                // Для десктопа создаем vCard
                 const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:${name}
