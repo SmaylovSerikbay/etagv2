@@ -30,6 +30,10 @@ RUN mkdir -p /app/staticfiles \
 # Копирование проекта
 COPY . .
 
+# Копирование статических файлов
+RUN cp -r profiles/static/* /app/profiles/static/ \
+    && cp -r static/* /app/static/ 2>/dev/null || true
+
 # Установка правильных прав
 RUN chown -R www-data:www-data /app \
     && chmod -R 755 /app/staticfiles \

@@ -32,11 +32,14 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'profiles', 'static'),
+    '/app/static',
+    '/app/profiles/static',
 ]
+
+# Отключаем временно сжатие статики для отладки
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Добавим отладочную информацию
 print("Checking static directories:")
@@ -61,7 +64,6 @@ MIDDLEWARE = [
 ]
 
 # Whitenoise specific settings
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_ROOT = None  # Отключаем root директорию
 WHITENOISE_MAX_AGE = 31536000
