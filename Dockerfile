@@ -21,17 +21,17 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Создание необходимых директорий
-RUN mkdir -p /app/staticfiles /app/media /app/logs /app/profiles/static/css
+RUN mkdir -p /app/staticfiles /app/media /app/logs /app/profiles/static/css /app/static/css
 
 # Копирование проекта
 COPY . .
 
-# Копирование статических файлов
-RUN mkdir -p /app/profiles/static/css && \
-    cp -r /app/static/css/* /app/profiles/static/css/ || true
-
 # Установка правильных прав
 RUN chown -R www-data:www-data /app
+
+# Проверка наличия статических файлов
+RUN ls -la /app/static/css/ || true
+RUN ls -la /app/profiles/static/css/ || true
 
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
