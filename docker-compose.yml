@@ -9,6 +9,8 @@ services:
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
              gunicorn etag.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    expose:
+      - "8000"
     volumes:
       - .:/app
       - /var/www/my-business-card.kz/static:/app/static
@@ -23,7 +25,7 @@ services:
       - db
     networks:
       - database_network
-      - https
+      - web_network
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000"]
@@ -41,7 +43,7 @@ services:
       - /var/www/my-business-card.kz/static:/app/static
       - /var/www/my-business-card.kz/media:/app/media
     networks:
-      - https
+      - web_network
     depends_on:
       - web
     restart: always
@@ -74,5 +76,5 @@ volumes:
 networks:
   database_network:
     external: true
-  https:
-    external: true 
+  web_network:
+    driver: bridge 
