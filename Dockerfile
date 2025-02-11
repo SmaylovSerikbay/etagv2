@@ -29,8 +29,5 @@ RUN chown -R www-data:www-data /app
 # Копирование проекта
 COPY . .
 
-# Копирование статических файлов в нужную директорию
-RUN cp -r profiles/static/* /app/static/
-
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
