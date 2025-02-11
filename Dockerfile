@@ -23,11 +23,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Создание необходимых директорий
 RUN mkdir -p /app/static /app/media /app/logs
 
-# Установка правильных прав
-RUN chown -R www-data:www-data /app
-
 # Копирование проекта
 COPY . .
+
+# Создание символической ссылки для статических файлов
+RUN mkdir -p /app/static/css && \
+    cp -r /app/profiles/static/css/* /app/static/css/ && \
+    mkdir -p /app/static/images && \
+    cp -r /app/profiles/static/images/* /app/static/images/
+
+# Установка правильных прав
+RUN chown -R www-data:www-data /app
 
 # Сбор статических файлов
 RUN python manage.py collectstatic --noinput
