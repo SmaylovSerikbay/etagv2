@@ -31,9 +31,9 @@ MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
 MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
 
 # Security settings
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = False  # SSL обрабатывается на уровне Nginx Proxy Manager
+SESSION_COOKIE_SECURE = False  # Отключаем, так как SSL на уровне прокси
+CSRF_COOKIE_SECURE = False  # Отключаем, так как SSL на уровне прокси
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
