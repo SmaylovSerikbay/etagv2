@@ -24,7 +24,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/staticfiles \
     && mkdir -p /app/media \
     && mkdir -p /app/logs \
-    && mkdir -p /app/static/css
+    && mkdir -p /app/static/css \
+    && mkdir -p /app/profiles/static/css
 
 # Копирование проекта
 COPY . .
@@ -33,7 +34,7 @@ COPY . .
 RUN chown -R www-data:www-data /app \
     && chmod -R 755 /app/staticfiles \
     && chmod -R 755 /app/static \
-    && chmod -R 755 /app/profiles/static
+    && chmod -R 755 /app/profiles
 
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
