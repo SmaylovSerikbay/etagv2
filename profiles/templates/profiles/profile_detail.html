@@ -363,6 +363,7 @@
             const instagram = "{{ profile.instagram }}";
             const facebook = "{{ profile.facebook }}";
             const linkedin = "{{ profile.linkedin }}";
+            const avatar = "{{ profile.avatar.url|default:'' }}";
             
             // Разбиваем имя на части (если есть пробел)
             const nameParts = name.split(' ');
@@ -379,51 +380,95 @@
                 website ? `Website: ${website}` : ''
             ].filter(Boolean).join('\\n');
 
-            const vcard = [
-                'BEGIN:VCARD',
-                'VERSION:3.0',
-                `FN:${name}`,
-                `N:${lastName};${firstName};;;`,
-                position ? `TITLE:${position}` : '',
-                company ? `ORG:${company}` : '',
-                phone ? `TEL;TYPE=CELL,VOICE:${phone}` : '',
-                email ? `EMAIL;TYPE=INTERNET,HOME:${email}` : '',
-                website ? `URL:${website}` : '',
-                socialInfo ? `NOTE:${socialInfo}` : '',
-                'END:VCARD'
-            ].filter(Boolean).join('\r\n');
+            // Функция для загрузки изображения и конвертации в BASE64
+            function loadImageAsBase64(url) {
+                return new Promise((resolve) => {
+                    if (!url) {
+                        resolve('');
+                        return;
+                    }
 
-            // Создаем Blob с правильной кодировкой
-            const blob = new Blob([vcard], { 
-                type: 'text/vcard;charset=utf-8' 
-            });
-            
-            // Создаем URL
-            const url = window.URL.createObjectURL(blob);
-            
-            // Создаем ссылку
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${name}.vcf`;
-            
-            // Для мобильных устройств добавляем дополнительные атрибуты
-            const ua = navigator.userAgent.toLowerCase();
-            const isMobile = /android|iphone|ipad|ipod/.test(ua);
-            
-            if (isMobile) {
-                link.setAttribute('target', '_blank');
-                link.setAttribute('rel', 'noopener');
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = this.width;
+                        canvas.height = this.height;
+                        
+                        // Ограничиваем размер фото
+                        const maxSize = 400;
+                        if (canvas.width > maxSize || canvas.height > maxSize) {
+                            const ratio = Math.min(maxSize / canvas.width, maxSize / canvas.height);
+                            canvas.width = canvas.width * ratio;
+                            canvas.height = canvas.height * ratio;
+                        }
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+                        const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+                        resolve(`PHOTO;ENCODING=b;TYPE=JPEG:${base64}`);
+                    };
+                    img.onerror = function() {
+                        resolve('');
+                    };
+                    img.src = url.startsWith('http') ? url : window.location.origin + url;
+                });
             }
-            
-            // Добавляем ссылку в DOM и кликаем
-            document.body.appendChild(link);
-            link.click();
-            
-            // Очищаем
-            setTimeout(() => {
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            }, 100);
+
+            // Асинхронная функция для создания vCard с фото
+            async function createVCardWithPhoto() {
+                const photoString = avatar ? await loadImageAsBase64(avatar) : '';
+                
+                const vcard = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `FN:${name}`,
+                    `N:${lastName};${firstName};;;`,
+                    position ? `TITLE:${position}` : '',
+                    company ? `ORG:${company}` : '',
+                    phone ? `TEL;TYPE=CELL,VOICE:${phone}` : '',
+                    email ? `EMAIL;TYPE=INTERNET,HOME:${email}` : '',
+                    website ? `URL:${website}` : '',
+                    photoString,
+                    socialInfo ? `NOTE:${socialInfo}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\r\n');
+
+                // Создаем Blob с правильной кодировкой
+                const blob = new Blob([vcard], { 
+                    type: 'text/vcard;charset=utf-8' 
+                });
+                
+                // Создаем URL
+                const url = window.URL.createObjectURL(blob);
+                
+                // Создаем ссылку
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${name}.vcf`;
+                
+                // Для мобильных устройств добавляем дополнительные атрибуты
+                const ua = navigator.userAgent.toLowerCase();
+                const isMobile = /android|iphone|ipad|ipod/.test(ua);
+                
+                if (isMobile) {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener');
+                }
+                
+                // Добавляем ссылку в DOM и кликаем
+                document.body.appendChild(link);
+                link.click();
+                
+                // Очищаем
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            }
+
+            // Запускаем создание vCard с фото
+            createVCardWithPhoto();
         }
     </script>
 </body>
