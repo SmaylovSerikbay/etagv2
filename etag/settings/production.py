@@ -29,7 +29,7 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'profiles', 'static'),
 ]
@@ -37,7 +37,7 @@ STATICFILES_DIRS = [
 # Whitenoise settings
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Whitenoise должен быть после SecurityMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -47,10 +47,10 @@ MIDDLEWARE = [
 ]
 
 # Whitenoise specific settings
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'  # Используем стандартное хранилище
 WHITENOISE_USE_FINDERS = True
-WHITENOISE_ROOT = STATIC_ROOT
-WHITENOISE_MAX_AGE = 31536000  # 1 год в секундах
+WHITENOISE_ROOT = None  # Отключаем root директорию
+WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
 
