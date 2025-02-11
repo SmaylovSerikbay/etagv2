@@ -369,9 +369,9 @@
             const isAndroid = ua.indexOf("android") > -1;
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
-            if (isAndroid) {
-                // Для Android используем прямой Intent для добавления контакта
-                const notes = [
+            if (isAndroid || isIOS) {
+                // Создаем vCard для мобильных устройств
+                const socialInfo = [
                     telegram ? `Telegram: @${telegram}` : '',
                     whatsapp ? `WhatsApp: ${whatsapp}` : '',
                     instagram ? `Instagram: @${instagram}` : '',
@@ -380,41 +380,6 @@
                     website ? `Website: ${website}` : ''
                 ].filter(Boolean).join('\\n');
 
-                let intentUrl = `intent://contacts/people/#Intent;` +
-                    `scheme=content;` +
-                    `action=android.intent.action.INSERT;` +
-                    `type=vnd.android.cursor.dir/person;` +
-                    `S.name=${encodeURIComponent(name)};`;
-
-                if (phone) intentUrl += `S.phone=${encodeURIComponent(phone)};`;
-                if (email) intentUrl += `S.email=${encodeURIComponent(email)};`;
-                if (company) intentUrl += `S.company=${encodeURIComponent(company)};`;
-                if (position) intentUrl += `S.title=${encodeURIComponent(position)};`;
-                if (notes) intentUrl += `S.notes=${encodeURIComponent(notes)};`;
-
-                intentUrl += 'end';
-
-                // Создаем временную ссылку для открытия Intent
-                const link = document.createElement('a');
-                link.href = intentUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-            } else if (isIOS) {
-                // Для iOS используем простой URL-схему для добавления контакта
-                const notes = [
-                    telegram ? `Telegram: @${telegram}` : '',
-                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
-                    instagram ? `Instagram: @${instagram}` : '',
-                    facebook ? `Facebook: ${facebook}` : '',
-                    linkedin ? `LinkedIn: ${linkedin}` : '',
-                    website ? `Website: ${website}` : ''
-                ].filter(Boolean).join('\\n');
-
-                let contactUrl = `tel:${phone}`;
-                
-                // Создаем vCard для iOS
                 const vcard = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
@@ -422,31 +387,38 @@
                     `N:${name};;;;`,
                     position ? `TITLE:${position}` : '',
                     company ? `ORG:${company}` : '',
-                    phone ? `TEL;type=CELL;type=pref:${phone}` : '',
-                    email ? `EMAIL;type=INTERNET;type=pref:${email}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL:${email}` : '',
                     website ? `URL:${website}` : '',
-                    notes ? `NOTE:${notes}` : '',
+                    socialInfo ? `NOTE:${socialInfo}` : '',
                     'END:VCARD'
-                ].filter(Boolean).join('\n');
+                ].filter(Boolean).join('\\n');
 
-                // Пробуем открыть контакт через tel: схему
-                window.location.href = contactUrl;
+                // Создаем Blob и URL
+                const blob = new Blob([vcard], { type: 'text/vcard' });
+                const url = window.URL.createObjectURL(blob);
                 
-                // Через небольшую задержку пробуем открыть vCard
+                // Создаем ссылку для скачивания
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${name}.vcf`;
+                
+                // Добавляем атрибуты для мобильных устройств
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener');
+                
+                // Добавляем ссылку в DOM, кликаем и удаляем
+                document.body.appendChild(link);
+                link.click();
+                
+                // Очищаем
                 setTimeout(() => {
-                    const vcardBlob = new Blob([vcard], { type: 'text/vcard' });
-                    const vcardUrl = window.URL.createObjectURL(vcardBlob);
-                    const link = document.createElement('a');
-                    link.href = vcardUrl;
-                    link.download = `${name}.vcf`;
-                    document.body.appendChild(link);
-                    link.click();
                     document.body.removeChild(link);
-                    window.URL.revokeObjectURL(vcardUrl);
+                    window.URL.revokeObjectURL(url);
                 }, 100);
 
             } else {
-                // Для десктопа создаем vCard для скачивания
+                // Для десктопа оставляем как есть
                 const notes = [
                     telegram ? `Telegram: @${telegram}` : '',
                     whatsapp ? `WhatsApp: ${whatsapp}` : '',
@@ -463,8 +435,8 @@
                     `N:${name};;;;`,
                     position ? `TITLE:${position}` : '',
                     company ? `ORG:${company}` : '',
-                    phone ? `TEL;type=CELL;type=pref:${phone}` : '',
-                    email ? `EMAIL;type=INTERNET;type=pref:${email}` : '',
+                    phone ? `TEL;TYPE=CELL:${phone}` : '',
+                    email ? `EMAIL:${email}` : '',
                     website ? `URL:${website}` : '',
                     notes ? `NOTE:${notes}` : '',
                     'END:VCARD'
