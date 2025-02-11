@@ -38,38 +38,43 @@
             {% endif %}
             
             <div class="header-actions">
-                <button onclick="showQRCode()" class="action-btn" title="QR-код">
-                    <i class="fas fa-qrcode"></i>
-                </button>
-                <button onclick="shareProfile()" class="action-btn" title="Поделиться">
-                    <i class="fas fa-share-alt"></i>
-                </button>
-                <button onclick="saveContactDirect()" class="action-btn" title="Сохранить контакт">
-                    <i class="fas fa-address-card"></i>
-                </button>
-                {% if user.is_authenticated %}
-                    {% if is_owner %}
-                        <a href="{% url 'profiles:edit_profile' %}" class="action-btn desktop-only" title="Редактировать">
-                            <i class="fas fa-edit"></i>
+                <div class="header-actions-left">
+                    <button onclick="showQRCode()" class="action-btn" title="QR-код">
+                        <i class="fas fa-qrcode"></i>
+                    </button>
+                    <button onclick="shareProfile()" class="action-btn" title="Поделиться">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
+                
+                <div class="header-actions-right">
+                    <button onclick="saveContactDirect()" class="action-btn" title="Сохранить контакт">
+                        <i class="fas fa-address-card"></i>
+                    </button>
+                    {% if user.is_authenticated %}
+                        {% if is_owner %}
+                            <a href="{% url 'profiles:edit_profile' %}" class="action-btn desktop-only" title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="post" action="{% url 'logout' %}" class="logout-form desktop-only">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn" title="Выйти">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}" class="action-btn desktop-only" title="Войти">
+                            <i class="fas fa-sign-in-alt"></i>
                         </a>
-                        <form method="post" action="{% url 'logout' %}" class="logout-form desktop-only">
-                            {% csrf_token %}
-                            <button type="submit" class="action-btn" title="Выйти">
-                                <i class="fas fa-sign-out-alt"></i>
-                            </button>
-                        </form>
+                        <a href="{% url 'signup' %}" class="action-btn desktop-only" title="Регистрация">
+                            <i class="fas fa-user-plus"></i>
+                        </a>
                     {% endif %}
-                {% else %}
-                    <a href="{% url 'login' %}" class="action-btn desktop-only" title="Войти">
-                        <i class="fas fa-sign-in-alt"></i>
-                    </a>
-                    <a href="{% url 'signup' %}" class="action-btn desktop-only" title="Регистрация">
-                        <i class="fas fa-user-plus"></i>
-                    </a>
-                {% endif %}
-                <button onclick="toggleMobileMenu()" class="action-btn mobile-menu-btn">
-                    <i class="fas fa-bars"></i>
-                </button>
+                    <button onclick="toggleMobileMenu()" class="action-btn mobile-menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Мобильное меню -->
