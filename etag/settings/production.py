@@ -34,12 +34,11 @@ DATABASES = {
 STATIC_URL = '/static/'
 STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [
-    '/app/static',
-    '/app/profiles/static',
+    '/app/static',  # Основная директория для статики
 ]
 
 # Отключаем временно сжатие статики для отладки
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Добавим отладочную информацию
 print("Checking static directories:")
