@@ -370,93 +370,21 @@
             const isIOS = /iphone|ipad|ipod/.test(ua);
             
             if (isAndroid) {
-                // Для Samsung/Android используем прямой Intent
-                const socialInfo = [
-                    telegram ? `Telegram: @${telegram}` : '',
-                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
-                    instagram ? `Instagram: @${instagram}` : '',
-                    facebook ? `Facebook: ${facebook}` : '',
-                    linkedin ? `LinkedIn: ${linkedin}` : '',
-                    website ? `Website: ${website}` : ''
-                ].filter(Boolean).join('\\n');
-
-                // Создаем Intent URL для Samsung
+                // Для Android используем простой intent
                 const intentUrl = 
-                    `intent://com.android.contacts/contact/create#Intent;` +
-                    `scheme=content;` +
+                    `intent:#Intent;` +
                     `action=android.intent.action.INSERT;` +
-                    `type=vnd.android.cursor.dir/raw_contact;` +
+                    `type=vnd.android.cursor.dir/contact;` +
                     `S.name=${encodeURIComponent(name)};` +
                     (phone ? `S.phone=${encodeURIComponent(phone)};` : '') +
                     (email ? `S.email=${encodeURIComponent(email)};` : '') +
                     (company ? `S.company=${encodeURIComponent(company)};` : '') +
                     (position ? `S.title=${encodeURIComponent(position)};` : '') +
-                    (socialInfo ? `S.notes=${encodeURIComponent(socialInfo)};` : '') +
                     'end';
 
                 window.location.href = intentUrl;
-
-            } else if (isIOS) {
-                // Для iOS используем contacts-ui:add
-                const contactData = {
-                    givenName: name,
-                    organizationName: company,
-                    jobTitle: position,
-                    phoneNumbers: [{
-                        type: "mobile",
-                        value: phone
-                    }],
-                    emailAddresses: [{
-                        type: "work",
-                        value: email
-                    }],
-                    urls: [{
-                        type: "website",
-                        value: website
-                    }],
-                    note: [
-                        telegram ? `Telegram: @${telegram}` : '',
-                        whatsapp ? `WhatsApp: ${whatsapp}` : '',
-                        instagram ? `Instagram: @${instagram}` : '',
-                        facebook ? `Facebook: ${facebook}` : '',
-                        linkedin ? `LinkedIn: ${linkedin}` : ''
-                    ].filter(Boolean).join('\\n')
-                };
-
-                // Пробуем открыть через contacts-ui
-                window.location.href = `contacts-ui:add?contact=${encodeURIComponent(JSON.stringify(contactData))}`;
-
-                // Если не сработало, создаем vCard с автоматическим открытием
-                setTimeout(() => {
-                    const vcard = [
-                        'BEGIN:VCARD',
-                        'VERSION:3.0',
-                        `FN:${name}`,
-                        `N:${name};;;;`,
-                        position ? `TITLE:${position}` : '',
-                        company ? `ORG:${company}` : '',
-                        phone ? `TEL;type=CELL;type=pref:${phone}` : '',
-                        email ? `EMAIL;type=INTERNET;type=pref:${email}` : '',
-                        website ? `URL:${website}` : '',
-                        'END:VCARD'
-                    ].filter(Boolean).join('\n');
-
-                    const blob = new Blob([vcard], { type: 'text/x-vcard' });
-                    const url = window.URL.createObjectURL(blob);
-                    
-                    // Создаем ссылку и автоматически открываем
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.type = 'text/x-vcard';
-                    link.setAttribute('rel', 'noopener');
-                    link.setAttribute('target', '_blank');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                }, 100);
             } else {
-                // Для десктопа создаем vCard
+                // Для iOS и десктопа создаем простой vCard
                 const vcard = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
@@ -468,9 +396,9 @@
                     email ? `EMAIL:${email}` : '',
                     website ? `URL:${website}` : '',
                     'END:VCARD'
-                ].filter(Boolean).join('\n');
+                ].filter(Boolean).join('\r\n');
 
-                const blob = new Blob([vcard], { type: 'text/vcard' });
+                const blob = new Blob([vcard], { type: 'text/x-vcard' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
