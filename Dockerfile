@@ -24,15 +24,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/static /app/media /app/logs
 
 # Установка правильных прав
-RUN chown -R www-data:www-data /app && \
-    chmod -R 755 /app/static /app/media /app/logs
+RUN chown -R www-data:www-data /app
 
 # Копирование проекта
 COPY . .
-
-# Установка переменных окружения
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 
 # Команда для запуска
 CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
