@@ -20,6 +20,8 @@ services:
       - DB_PASSWORD=Mycard-business&2025
       - DB_HOST=77.246.247.179
       - DB_PORT=5432
+      - CSRF_TRUSTED_ORIGINS=https://my-business-card.kz,http://my-business-card.kz
+      - ALLOWED_HOSTS=my-business-card.kz,localhost,127.0.0.1
     networks:
       - web_network
     healthcheck:
