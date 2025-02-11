@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libtiff-dev \
     libwebp-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Установка рабочей директории
@@ -19,8 +20,14 @@ COPY requirements.txt .
 # Установка зависимостей Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Создание необходимых директорий
+RUN mkdir -p /app/static /app/media /app/logs
+
+# Установка правильных прав
+RUN chown -R www-data:www-data /app
+
 # Копирование проекта
 COPY . .
 
 # Команда для запуска
-CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000"] 
+CMD ["gunicorn", "etag.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"] 
