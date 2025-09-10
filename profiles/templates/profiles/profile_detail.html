@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 </head>
 <body>
     <!-- Микроразметка vCard -->
@@ -145,11 +146,15 @@
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
                 <div class="qr-container">
+                    {% if profile.qr_code %}
                     <img src="{{ profile.qr_code.url }}" alt="QR Code" class="qr-code">
                     <button onclick="downloadQR()" class="action-button">
                         <i class="fas fa-download"></i>
                         Скачать QR-код
                     </button>
+                    {% else %}
+                    <div class="qr-placeholder">QR-код еще не сгенерирован</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -266,11 +271,15 @@
 
         function downloadQR() {
             const link = document.createElement('a');
+            {% if profile.qr_code %}
             link.href = '{{ profile.qr_code.url }}';
             link.download = 'qr_code.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            {% else %}
+            alert('QR-код еще не сгенерирован');
+            {% endif %}
         }
 
         function shareProfile() {
@@ -363,7 +372,11 @@
             const instagram = "{{ profile.instagram }}";
             const facebook = "{{ profile.facebook }}";
             const linkedin = "{{ profile.linkedin }}";
-            const avatar = "{{ profile.avatar.url|default:'' }}";
+            {% if profile.avatar %}
+            const avatar = "{{ profile.avatar.url }}";
+            {% else %}
+            const avatar = "";
+            {% endif %}
 
             // Функция для загрузки изображения и конвертации в BASE64
             async function loadImageAsBase64(url) {
@@ -402,7 +415,7 @@
                     facebook ? `Facebook: ${facebook}` : '',
                     linkedin ? `LinkedIn: ${linkedin}` : '',
                     website ? `Website: ${website}` : ''
-                ].filter(Boolean).join('\\n');
+                ].filter(Boolean).join('\n');
 
                 // Загружаем и конвертируем фото
                 const photoBase64 = avatar ? await loadImageAsBase64(avatar) : '';
