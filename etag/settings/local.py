@@ -16,6 +16,19 @@ DATABASES = {
     }
 }
 
+# Ослабляем требования к паролю в локальной среде: убираем проверку похожести на атрибуты пользователя (email/логин)
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
 # Отключаем некоторые продакшн настройки
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

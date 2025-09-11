@@ -33,7 +33,7 @@
 
     <div class="profile-container">
         <!-- Шапка профиля -->
-        <div class="profile-header">
+        <div class="profile-header {% if profile.background %}has-bg{% else %}no-bg{% endif %}">
             {% if profile.background %}
                 <div class="profile-background" style="background-image: url('{{ profile.background.url }}')"></div>
             {% endif %}
