@@ -1,10 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
+from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from .models import Profile
 from .forms import SignUpForm, ProfileForm, CustomAuthenticationForm
 from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
 
 def welcome(request):
     if request.user.is_authenticated:
@@ -89,3 +91,15 @@ def edit_profile(request):
 def logout_view(request):
     logout(request)
     return redirect('welcome')
+
+class SmartLoginView(LoginView):
+    template_name = 'profiles/login.html'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        user = self.request.user
+        try:
+            profile = user.profile
+            return reverse('profiles:profile_detail', kwargs={'hash': profile.hash})
+        except Profile.DoesNotExist:
+            return reverse('profiles:profile_list')
