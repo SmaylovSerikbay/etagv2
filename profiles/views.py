@@ -33,6 +33,8 @@ def signup(request):
                 current_site = get_current_site(request)
                 protocol = 'https' if request.is_secure() else 'http'
                 profile.set_current_site(f"{protocol}://{current_site.domain}")
+                # Сразу сохраним, чтобы сгенерировались hash/QR с корректным доменом
+                profile.save()
                 
                 # Входим в систему
                 login(request, user)
