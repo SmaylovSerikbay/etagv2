@@ -95,8 +95,9 @@ def profile_detail(request, hash):
             # Redirect the user to their own canonical profile URL
             return redirect('profiles:profile_detail', hash=profile.hash)
 
-        # Anonymous user requested a non-existent profile: send to welcome instead of 404
-        return redirect('welcome')
+        # Anonymous user requested a non-existent profile: return 404 instead of redirecting
+        from django.http import Http404
+        raise Http404("Profile not found")
 
     # Redirect to canonical URL if incoming hash was dashed or otherwise different
     if hash != normalized_hash:
