@@ -1,14 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
+from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from .models import Profile
 from .forms import SignUpForm, ProfileForm, CustomAuthenticationForm
 from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
 
 def welcome(request):
     if request.user.is_authenticated:
-        return redirect('profiles:profile_detail', hash=request.user.profile.hash)
+        try:
+            return redirect('profiles:profile_detail', hash=request.user.profile.hash)
+        except Profile.DoesNotExist:
+            return redirect('profiles:edit_profile')
     return render(request, 'profiles/welcome.html')
 
 def signup(request):
@@ -33,6 +38,8 @@ def signup(request):
                 current_site = get_current_site(request)
                 protocol = 'https' if request.is_secure() else 'http'
                 profile.set_current_site(f"{protocol}://{current_site.domain}")
+                # Сразу сохраним, чтобы сгенерировались hash/QR с корректным доменом
+                profile.save()
                 
                 # Входим в систему
                 login(request, user)
@@ -87,3 +94,16 @@ def edit_profile(request):
 def logout_view(request):
     logout(request)
     return redirect('welcome')
+
+class SmartLoginView(LoginView):
+    template_name = 'profiles/login.html'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        user = self.request.user
+        # Если есть профиль — в профиль, иначе на создание профиля
+        try:
+            profile = user.profile
+            return reverse('profiles:profile_detail', kwargs={'hash': profile.hash})
+        except Profile.DoesNotExist:
+            return reverse('profiles:edit_profile')

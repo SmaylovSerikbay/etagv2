@@ -7,24 +7,95 @@
     <title>Профили — E‑TAG</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .page-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 16px 20px 40px;
+        }
+
+        .header-actions {
+            position: static;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions .left,
+        .header-actions .right { display: flex; gap: 10px; align-items: center; }
+
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .profile-card img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 10px;
+            max-height: 190px;
+        }
+
+        .profile-card h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .profile-card p {
+            margin: 0;
+            color: var(--gray-600, #6b7280);
+        }
+
+        .profile-card .btn { align-self: flex-start; }
+
+        .messages { margin-bottom: 16px; }
+
+        @media (max-width: 640px) {
+            .page-container { padding-left: 14px; padding-right: 14px; }
+            .header-actions { justify-content: center; gap: 8px; }
+            .profiles-grid { gap: 12px; }
+            .profile-card { padding: 12px;
+                padding: 20px 50px 20px 20px; }
+            h1 { font-size: 28px; margin: 10px 0 16px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container section">
-        <div class="header-actions" style="position: static; display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 24px;">
-            {% if user.is_authenticated %}
-                {% if user.profile %}
+    <div class="container section page-container">
+        <div class="header-actions">
+            <div class="left">
+                {% if user.is_authenticated and user.profile %}
                     <a href="{% url 'profiles:profile_detail' user.profile.hash %}" class="btn">Мой профиль</a>
-                {% else %}
+                {% elif user.is_authenticated %}
                     <a href="{% url 'profiles:edit_profile' %}" class="btn">Создать профиль</a>
                 {% endif %}
-                <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline">Выйти</button>
-                </form>
-            {% else %}
-                <a href="{% url 'login' %}" class="btn">Войти</a>
-                <a href="{% url 'signup' %}" class="btn btn-outline">Регистрация</a>
-            {% endif %}
+            </div>
+            <div class="right">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}" style="display:inline-block">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn">Войти</a>
+                    <a href="{% url 'signup' %}" class="btn btn-outline">Регистрация</a>
+                {% endif %}
+            </div>
         </div>
 
         {% if messages %}
@@ -37,7 +108,7 @@
         </div>
         {% endif %}
 
-        <h1 style="text-align:center">Профили</h1>
+        <h1 style="text-align:center; font-size:34px; margin: 8px 0 18px;">Профили</h1>
         {% if profiles %}
             <div class="profiles-grid">
                 {% for profile in profiles %}

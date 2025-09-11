@@ -30,13 +30,13 @@ class Profile(models.Model):
     whatsapp = models.CharField('WHATSAPP', max_length=100, blank=True)
     birthday = models.DateField('ДЕНЬ РОЖДЕНИЯ', null=True, blank=True)
     display_birthday = models.BooleanField('ПОКАЗЫВАТЬ ДЕНЬ РОЖДЕНИЯ', default=False)
-    hash = models.CharField(max_length=50, unique=True, editable=False)
+    hash = models.CharField(max_length=32, unique=True, editable=False)
     is_trial = models.BooleanField('ПРОБНЫЙ ПЕРИОД', default=True)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     
     def save(self, *args, **kwargs):
         if not self.hash:
-            self.hash = str(uuid.uuid4())[:32]
+            self.hash = uuid.uuid4().hex
         if not self.name:
             self.name = self.user.username.upper()
             

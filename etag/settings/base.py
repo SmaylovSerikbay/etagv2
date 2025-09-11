@@ -134,6 +134,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Auth settings
+# Используем корректные пути для аутентификации
+LOGIN_URL = '/login/'
 # Redirect to profiles list after login to avoid missing required args for profile_detail
 LOGIN_REDIRECT_URL = 'profiles:profile_list'
 LOGOUT_REDIRECT_URL = 'welcome'
