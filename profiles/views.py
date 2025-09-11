@@ -68,7 +68,14 @@ def profile_list(request):
     })
 
 def profile_detail(request, hash):
-    profile = get_object_or_404(Profile, hash=hash)
+    # Support both dashed UUIDs and 32-char hex hashes
+    normalized_hash = hash.replace('-', '')
+    profile = get_object_or_404(Profile, hash=normalized_hash)
+
+    # Redirect to canonical URL if incoming hash was dashed or otherwise different
+    if hash != normalized_hash:
+        return redirect('profiles:profile_detail', hash=profile.hash)
+
     is_owner = request.user.is_authenticated and profile.user == request.user
     return render(request, 'profiles/profile_detail.html', {
         'profile': profile,
