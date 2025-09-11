@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Список профилей</title>
+    <title>Профили — E‑TAG</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="profile-list-container">
-        <div class="header-actions">
+    <div class="container section">
+        <div class="header-actions" style="position: static; display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 24px;">
             {% if user.is_authenticated %}
                 {% if user.profile %}
                     <a href="{% url 'profiles:profile_detail' user.profile.hash %}" class="btn">Мой профиль</a>
@@ -36,7 +37,7 @@
         </div>
         {% endif %}
 
-        <h1>Список профилей</h1>
+        <h1 style="text-align:center">Профили</h1>
         {% if profiles %}
             <div class="profiles-grid">
                 {% for profile in profiles %}
@@ -46,12 +47,12 @@
                         {% endif %}
                         <h2>{{ profile.name }}</h2>
                         <p>{{ profile.info|truncatewords:20 }}</p>
-                        <a href="{% url 'profiles:profile_detail' profile.hash %}">Подробнее</a>
+                        <a class="btn btn-outline" href="{% url 'profiles:profile_detail' profile.hash %}">Подробнее</a>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p>Профили пока не созданы.</p>
+            <p style="text-align:center;color:var(--gray-600)">Профили пока не созданы.</p>
         {% endif %}
     </div>
 </body>

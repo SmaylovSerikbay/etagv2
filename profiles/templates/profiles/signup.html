@@ -32,9 +32,11 @@
                 {% if form.username.errors %}
                     <div class="error">{{ form.username.errors.0 }}</div>
                 {% endif %}
-                {% if form.username.help_text %}
-                    <div class="help-text">{{ form.username.help_text }}</div>
-                {% endif %}
+                {% with ht=form.username.help_text|cut:"Только буквы, цифры и символы @/./+/-/_." %}
+                    {% if ht %}
+                        <div class="help-text">{{ ht|safe }}</div>
+                    {% endif %}
+                {% endwith %}
             </div>
 
             <div class="form-group">

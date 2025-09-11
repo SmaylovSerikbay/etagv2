@@ -4,16 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход</title>
+    <title>Вход — E‑TAG</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="auth-container">
-        <h1>Вход в систему</h1>
+        <h1>Вход</h1>
         <form method="post" class="auth-form">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Войти</button>
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                {{ form.password }}
+            </div>
+            <button type="submit" class="submit-button">Войти</button>
         </form>
         <div class="auth-links">
             <a href="{% url 'signup' %}">Нет аккаунта? Зарегистрироваться</a>
