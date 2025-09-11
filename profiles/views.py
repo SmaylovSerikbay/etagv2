@@ -10,7 +10,10 @@ from django.urls import reverse
 
 def welcome(request):
     if request.user.is_authenticated:
-        return redirect('profiles:profile_detail', hash=request.user.profile.hash)
+        try:
+            return redirect('profiles:profile_detail', hash=request.user.profile.hash)
+        except Profile.DoesNotExist:
+            return redirect('profiles:edit_profile')
     return render(request, 'profiles/welcome.html')
 
 def signup(request):
@@ -98,8 +101,9 @@ class SmartLoginView(LoginView):
 
     def get_success_url(self):
         user = self.request.user
+        # Если есть профиль — в профиль, иначе на создание профиля
         try:
             profile = user.profile
             return reverse('profiles:profile_detail', kwargs={'hash': profile.hash})
         except Profile.DoesNotExist:
-            return reverse('profiles:profile_list')
+            return reverse('profiles:edit_profile')
