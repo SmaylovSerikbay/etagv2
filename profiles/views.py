@@ -70,7 +70,33 @@ def profile_list(request):
 def profile_detail(request, hash):
     # Support both dashed UUIDs and 32-char hex hashes
     normalized_hash = hash.replace('-', '')
-    profile = get_object_or_404(Profile, hash=normalized_hash)
+
+    # Try to find profile by hash first
+    profile = Profile.objects.filter(hash=normalized_hash).first()
+
+    # If not found, try to help the authenticated user recover/create their profile
+    if not profile:
+        if request.user.is_authenticated:
+            # Ensure the current user has a profile
+            try:
+                profile = request.user.profile
+            except Profile.DoesNotExist:
+                # Create a minimal profile for the user and persist it with proper site for QR
+                profile = Profile(
+                    user=request.user,
+                    name=request.user.username.upper(),
+                    email=request.user.email,
+                )
+                current_site = get_current_site(request)
+                protocol = 'https' if request.is_secure() else 'http'
+                profile.set_current_site(f"{protocol}://{current_site.domain}")
+                profile.save()
+
+            # Redirect the user to their own canonical profile URL
+            return redirect('profiles:profile_detail', hash=profile.hash)
+
+        # Anonymous user requested a non-existent profile: send to welcome instead of 404
+        return redirect('welcome')
 
     # Redirect to canonical URL if incoming hash was dashed or otherwise different
     if hash != normalized_hash:
