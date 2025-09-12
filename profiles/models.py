@@ -59,7 +59,12 @@ class Profile(models.Model):
                 domain = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
                 current_site = f"{protocol}://{domain}"
 
-            profile_url = f"{current_site}{reverse('profiles:profile_detail', kwargs={'hash': self.hash})}"
+            # Генерируем URL с UUID в формате с дефисами
+            try:
+                dashed_hash = str(uuid.UUID(self.hash))
+            except Exception:
+                dashed_hash = self.hash
+            profile_url = f"{current_site}{reverse('profiles:profile_detail', kwargs={'hash': dashed_hash})}"
             qr.add_data(profile_url)
             qr.make(fit=True)
 
@@ -78,7 +83,12 @@ class Profile(models.Model):
         self._current_site = current_site
     
     def get_absolute_url(self):
-        return reverse('profiles:profile_detail', kwargs={'hash': self.hash})
+        # Возвращаем URL с UUID в формате с дефисами
+        try:
+            dashed_hash = str(uuid.UUID(self.hash))
+        except Exception:
+            dashed_hash = self.hash
+        return reverse('profiles:profile_detail', kwargs={'hash': dashed_hash})
     
     def __str__(self):
         return self.name.upper()
