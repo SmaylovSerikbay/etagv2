@@ -103,9 +103,13 @@ def profile_detail(request, hash):
         from django.http import Http404
         raise Http404("Profile not found")
 
-    # Redirect to canonical URL if incoming hash was dashed or otherwise different
-    if hash != normalized_hash:
-        return redirect('profiles:profile_detail', hash=profile.hash)
+    # Redirect to canonical URL (always dashed UUID form)
+    try:
+        dashed_hash = str(uuid.UUID(profile.hash))
+    except Exception:
+        dashed_hash = profile.hash
+    if hash != dashed_hash:
+        return redirect('profiles:profile_detail', hash=dashed_hash)
 
     is_owner = request.user.is_authenticated and profile.user == request.user
     return render(request, 'profiles/profile_detail.html', {
