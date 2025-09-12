@@ -7,6 +7,7 @@ from .models import Profile
 from .forms import SignUpForm, ProfileForm, CustomAuthenticationForm
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
+from django.db import transaction
 
 def welcome(request):
     if request.user.is_authenticated:
@@ -24,32 +25,35 @@ def signup(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             try:
-                # Создаем пользователя
-                user = form.save()
-                
-                # Создаем профиль
-                profile = Profile.objects.create(
-                    user=user,
-                    name=user.username.upper(),
-                    email=user.email
-                )
-                
-                # Установим текущий сайт перед сохранением
-                current_site = get_current_site(request)
-                protocol = 'https' if request.is_secure() else 'http'
-                profile.set_current_site(f"{protocol}://{current_site.domain}")
-                # Сразу сохраним, чтобы сгенерировались hash/QR с корректным доменом
-                profile.save()
-                
-                # Входим в систему
+                with transaction.atomic():
+                    # Создаем пользователя
+                    user = form.save()
+
+                    # Создаем профиль
+                    profile = Profile.objects.create(
+                        user=user,
+                        name=user.username.upper(),
+                        email=user.email
+                    )
+
+                    # Установим текущий сайт перед сохранением
+                    current_site = get_current_site(request)
+                    protocol = 'https' if request.is_secure() else 'http'
+                    profile.set_current_site(f"{protocol}://{current_site.domain}")
+                    # Сохраним профиль (генерация hash/QR)
+                    profile.save()
+
+                # Входим в систему после фиксации транзакции
                 login(request, user)
-                
                 messages.success(request, 'Регистрация успешна! Теперь заполните свой профиль.')
                 return redirect('profiles:profile_detail', hash=profile.hash)
             except Exception as e:
-                # Если произошла ошибка, удаляем пользователя
-                if user:
-                    user.delete()
+                # Если произошла ошибка, удаляем пользователя, если он был создан
+                try:
+                    if user:
+                        user.delete()
+                except Exception:
+                    pass
                 messages.error(request, f'Ошибка при регистрации: {str(e)}')
         else:
             for field, errors in form.errors.items():
