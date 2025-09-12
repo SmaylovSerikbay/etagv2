@@ -72,8 +72,8 @@ def profile_list(request):
     })
 
 def profile_detail(request, hash):
-    # Support both dashed UUIDs and 32-char hex hashes
-    normalized_hash = hash.replace('-', '')
+    # Support both dashed UUIDs and 32-char hex hashes (case-insensitive)
+    normalized_hash = hash.replace('-', '').lower()
 
     # Try to find profile by hash first
     profile = Profile.objects.filter(hash=normalized_hash).first()
