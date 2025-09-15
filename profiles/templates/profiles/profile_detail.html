@@ -167,44 +167,6 @@
             </div>
             {% endif %}
 
-            <!-- Контакты -->
-            {% if profile.phone or profile.email or profile.website %}
-            <div class="profile-section">
-                <h2 class="section-title">Контакты</h2>
-                <div class="contact-grid">
-                    {% if profile.phone %}
-                    <a href="tel:{{ profile.phone }}" class="contact-card">
-                        <i class="fas fa-phone"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Телефон</span>
-                            <span class="contact-value">{{ profile.phone }}</span>
-                        </div>
-                    </a>
-                    {% endif %}
-
-                    {% if profile.email %}
-                    <a href="mailto:{{ profile.email }}" class="contact-card">
-                        <i class="fas fa-envelope"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Email</span>
-                            <span class="contact-value">{{ profile.email }}</span>
-                        </div>
-                    </a>
-                    {% endif %}
-
-                    {% if profile.website %}
-                    <a href="{{ profile.website }}" target="_blank" class="contact-card">
-                        <i class="fas fa-globe"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Сайт</span>
-                            <span class="contact-value">{{ profile.website }}</span>
-                        </div>
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
             <!-- Социальные сети -->
             {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin %}
             <div class="profile-section">
@@ -242,6 +204,44 @@
                     <a href="https://linkedin.com/in/{{ profile.linkedin }}" class="social-card linkedin">
                         <i class="fab fa-linkedin-in"></i>
                         <span>LinkedIn</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Контакты -->
+            {% if profile.phone or profile.email or profile.website %}
+            <div class="profile-section">
+                <h2 class="section-title">Контакты</h2>
+                <div class="contact-grid">
+                    {% if profile.phone %}
+                    <a href="tel:{{ profile.phone }}" class="contact-card">
+                        <i class="fas fa-phone"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Телефон</span>
+                            <span class="contact-value">{{ profile.phone }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.email %}
+                    <a href="mailto:{{ profile.email }}" class="contact-card">
+                        <i class="fas fa-envelope"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Email</span>
+                            <span class="contact-value">{{ profile.email }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if profile.website %}
+                    <a href="{{ profile.website }}" target="_blank" class="contact-card">
+                        <i class="fas fa-globe"></i>
+                        <div class="contact-info">
+                            <span class="contact-label">Сайт</span>
+                            <span class="contact-value">Мой сайт</span>
+                        </div>
                     </a>
                     {% endif %}
                 </div>
