@@ -1146,7 +1146,7 @@ button[type="submit"]:hover {
 }
 
 .edit-header {
-    background: linear-gradient(180deg, rgba(10,132,255,0.9), rgba(10,132,255,0.75));
+    background: #000000;
     color: white;
     padding: 1.25rem;
     display: flex;
@@ -1162,6 +1162,7 @@ button[type="submit"]:hover {
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    color: #ffffff;
 }
 
 .back-btn {
