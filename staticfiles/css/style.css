@@ -796,7 +796,6 @@ body {
 /* Адаптивность для форм */
 @media (max-width: 768px) {
     .auth-container {
-        margin: 20px;
         padding: 1.5rem;
     }
 
