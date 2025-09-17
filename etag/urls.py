@@ -13,6 +13,7 @@ def health_check(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.welcome, name='welcome'),  # Корневой URL
+    path('nfc/<str:uid>/', views.nfc_entry, name='nfc_entry_root'),
     path('profiles/', include('profiles.urls')),  # URL для profiles
     
     # Аутентификация
