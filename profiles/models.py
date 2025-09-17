@@ -19,15 +19,15 @@ class Profile(models.Model):
     background = models.ImageField('ФОН', upload_to='backgrounds/', null=True, blank=True, help_text='Рекомендуемый размер 530x200')
     company = models.CharField('КОМПАНИЯ', max_length=100, blank=True)
     position = models.CharField('ДОЛЖНОСТЬ', max_length=100, blank=True)
-    phone = models.CharField('ТЕЛЕФОН', max_length=20, blank=True)
-    email = models.EmailField('EMAIL', blank=True)
-    website = models.URLField('САЙТ', blank=True)
-    instagram = models.CharField('INSTAGRAM', max_length=100, blank=True)
-    facebook = models.CharField('FACEBOOK', max_length=100, blank=True)
-    twitter = models.CharField('TWITTER', max_length=100, blank=True)
-    linkedin = models.CharField('LINKEDIN', max_length=100, blank=True)
-    telegram = models.CharField('TELEGRAM', max_length=100, blank=True)
-    whatsapp = models.CharField('WHATSAPP', max_length=100, blank=True)
+    phone = models.CharField('ТЕЛЕФОН', max_length=255, blank=True)
+    email = models.CharField('EMAIL', max_length=512, blank=True)
+    website = models.CharField('САЙТ', max_length=1024, blank=True)
+    instagram = models.CharField('INSTAGRAM', max_length=512, blank=True)
+    facebook = models.CharField('FACEBOOK', max_length=512, blank=True)
+    twitter = models.CharField('TWITTER', max_length=512, blank=True)
+    linkedin = models.CharField('LINKEDIN', max_length=512, blank=True)
+    telegram = models.CharField('TELEGRAM', max_length=512, blank=True)
+    whatsapp = models.CharField('WHATSAPP', max_length=512, blank=True)
     birthday = models.DateField('ДЕНЬ РОЖДЕНИЯ', null=True, blank=True)
     display_birthday = models.BooleanField('ПОКАЗЫВАТЬ ДЕНЬ РОЖДЕНИЯ', default=False)
     hash = models.CharField(max_length=32, unique=True, editable=False)
@@ -96,3 +96,36 @@ class Profile(models.Model):
     class Meta:
         verbose_name = 'ПРОФИЛЬ'
         verbose_name_plural = 'ПРОФИЛИ'
+
+    # Удобные свойства для работы с несколькими значениями соцсетей (через запятую)
+    @property
+    def telegram_list(self):
+        return [item.strip() for item in (self.telegram or '').split(',') if item.strip()]
+
+    @property
+    def whatsapp_list(self):
+        return [item.strip() for item in (self.whatsapp or '').split(',') if item.strip()]
+
+    @property
+    def instagram_list(self):
+        return [item.strip() for item in (self.instagram or '').split(',') if item.strip()]
+
+    @property
+    def facebook_list(self):
+        return [item.strip() for item in (self.facebook or '').split(',') if item.strip()]
+
+    @property
+    def linkedin_list(self):
+        return [item.strip() for item in (self.linkedin or '').split(',') if item.strip()]
+
+    @property
+    def phone_list(self):
+        return [item.strip() for item in (self.phone or '').split(',') if item.strip()]
+
+    @property
+    def email_list(self):
+        return [item.strip() for item in (self.email or '').split(',') if item.strip()]
+
+    @property
+    def website_list(self):
+        return [item.strip() for item in (self.website or '').split(',') if item.strip()]

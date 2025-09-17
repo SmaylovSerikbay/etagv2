@@ -167,84 +167,74 @@
             </div>
             {% endif %}
 
-            <!-- Социальные сети -->
-            {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin %}
+            <!-- Контакты (Соцсети + Контактные данные) -->
+            {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin or profile.phone or profile.email or profile.website %}
             <div class="profile-section">
-                <h2 class="section-title">Социальные сети</h2>
+                <h2 class="section-title">Контакты</h2>
+
+                {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin %}
                 <div class="social-grid">
-                    {% if profile.telegram %}
-                    <a href="https://t.me/{{ profile.telegram }}" class="social-card telegram">
+                    {% for tg in profile.telegram_list %}
+                    <a href="https://t.me/{{ tg }}" class="social-card telegram">
                         <i class="fab fa-telegram-plane"></i>
                         <span>Telegram</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.whatsapp %}
-                    <a href="https://wa.me/{{ profile.whatsapp }}" class="social-card whatsapp">
+                    {% for wa in profile.whatsapp_list %}
+                    <a href="https://wa.me/{{ wa }}" class="social-card whatsapp">
                         <i class="fab fa-whatsapp"></i>
                         <span>WhatsApp</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.instagram %}
-                    <a href="https://instagram.com/{{ profile.instagram }}" class="social-card instagram">
+                    {% for ig in profile.instagram_list %}
+                    <a href="https://instagram.com/{{ ig }}" class="social-card instagram">
                         <i class="fab fa-instagram"></i>
                         <span>Instagram</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.facebook %}
-                    <a href="https://facebook.com/{{ profile.facebook }}" class="social-card facebook">
+                    {% for fb in profile.facebook_list %}
+                    <a href="https://facebook.com/{{ fb }}" class="social-card facebook">
                         <i class="fab fa-facebook-f"></i>
                         <span>Facebook</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.linkedin %}
-                    <a href="https://linkedin.com/in/{{ profile.linkedin }}" class="social-card linkedin">
+                    {% for li in profile.linkedin_list %}
+                    <a href="https://linkedin.com/in/{{ li }}" class="social-card linkedin">
                         <i class="fab fa-linkedin-in"></i>
                         <span>LinkedIn</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-            </div>
-            {% endif %}
+                {% endif %}
 
-            <!-- Контакты -->
-            {% if profile.phone or profile.email or profile.website %}
-            <div class="profile-section">
-                <h2 class="section-title">Контакты</h2>
-                <div class="contact-grid">
-                    {% if profile.phone %}
-                    <a href="tel:{{ profile.phone }}" class="contact-card">
+                {% if profile.phone or profile.email or profile.website %}
+                <div class="social-grid">
+                    {% for ph in profile.phone_list %}
+                    <a href="tel:{{ ph }}" class="social-card phone">
                         <i class="fas fa-phone"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Телефон</span>
-                            <span class="contact-value">{{ profile.phone }}</span>
-                        </div>
+                        <span>Номер телефона</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.email %}
-                    <a href="mailto:{{ profile.email }}" class="contact-card">
+                    {% for em in profile.email_list %}
+                    <a href="mailto:{{ em }}" class="social-card email">
                         <i class="fas fa-envelope"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Email</span>
-                            <span class="contact-value">{{ profile.email }}</span>
-                        </div>
+                        <span>Электронная Почта</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
 
-                    {% if profile.website %}
-                    <a href="{{ profile.website }}" target="_blank" class="contact-card">
+                    {% for wb in profile.website_list %}
+                    <a href="{{ wb }}" target="_blank" class="social-card website">
                         <i class="fas fa-globe"></i>
-                        <div class="contact-info">
-                            <span class="contact-label">Сайт</span>
-                            <span class="contact-value">Мой сайт</span>
-                        </div>
+                        <span>Мой Сайт</span>
                     </a>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% endif %}
             </div>
             {% endif %}
         </div>
