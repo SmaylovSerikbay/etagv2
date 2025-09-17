@@ -30,6 +30,7 @@ class CustomLoginView(auth_views.LoginView):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.welcome, name='welcome'),
+    path('nfc/<str:uid>/', views.nfc_entry, name='nfc_entry_root'),
     path('profiles/', include('profiles.urls')),
     path('login/', CustomLoginView.as_view(
         template_name='registration/login.html',

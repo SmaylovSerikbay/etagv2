@@ -10,6 +10,7 @@ import qrcode
 from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw, ImageOps
+from django.utils import timezone
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -129,3 +130,26 @@ class Profile(models.Model):
     @property
     def website_list(self):
         return [item.strip() for item in (self.website or '').split(',') if item.strip()]
+
+
+class NfcCard(models.Model):
+    uid = models.CharField(max_length=128, unique=True)
+    profile = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, blank=True, related_name='nfc_cards')
+    first_seen_at = models.DateTimeField(null=True, blank=True)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    tap_count = models.PositiveIntegerField(default=0)
+
+    def mark_tap(self):
+        now = timezone.now()
+        if not self.first_seen_at:
+            self.first_seen_at = now
+        self.last_seen_at = now
+        self.tap_count = (self.tap_count or 0) + 1
+
+    def __str__(self):
+        return f"NFC {self.uid} -> {self.profile.name if self.profile else 'unassigned'}"
+
+    class Meta:
+        verbose_name = 'NFC карта'
+        verbose_name_plural = 'NFC карты'

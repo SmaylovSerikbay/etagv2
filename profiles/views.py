@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
-from .models import Profile
+from .models import Profile, NfcCard
+from django.utils import timezone
 from .forms import SignUpForm, ProfileForm, CustomAuthenticationForm
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -127,6 +128,60 @@ def profile_detail(request, hash):
         'profile': profile,
         'is_owner': is_owner
     })
+
+def nfc_entry(request, uid):
+    # Normalize uid to uppercase without spaces
+    normalized_uid = (uid or '').strip().upper()
+    if not normalized_uid:
+        from django.http import Http404
+        raise Http404("NFC UID is required")
+
+    # Get or create NFC card record
+    card, _ = NfcCard.objects.get_or_create(uid=normalized_uid)
+    card.mark_tap()
+
+    # Case 1: Card is already assigned to a profile → always redirect to that profile
+    if card.profile:
+        card.save(update_fields=['last_seen_at', 'tap_count'])
+        try:
+            dashed_hash = str(uuid.UUID(card.profile.hash))
+        except Exception:
+            dashed_hash = card.profile.hash
+        return redirect('profiles:profile_detail', hash=dashed_hash)
+
+    # Card is not assigned yet
+    if not request.user.is_authenticated:
+        # First touch by an anonymous user → go to signup, with next back to this NFC endpoint
+        signup_url = reverse('signup')
+        card.save(update_fields=['first_seen_at', 'last_seen_at', 'tap_count'])
+        return redirect(f"{signup_url}?next={request.get_full_path()}")
+
+    # Authenticated user tapped an unassigned card → assign it to their profile on second tap
+    # Ensure the user has a profile
+    try:
+        user_profile = request.user.profile
+    except Profile.DoesNotExist:
+        # Create minimal profile if missing
+        user_profile = Profile(
+            user=request.user,
+            name=request.user.username.upper(),
+            email=request.user.email,
+        )
+        current_site = get_current_site(request)
+        protocol = 'https' if request.is_secure() else 'http'
+        user_profile.set_current_site(f"{protocol}://{current_site.domain}")
+        user_profile.save()
+
+    # Assign and persist
+    card.profile = user_profile
+    card.assigned_at = timezone.now()
+    card.save(update_fields=['profile', 'assigned_at', 'last_seen_at', 'tap_count', 'first_seen_at'])
+
+    try:
+        dashed_hash = str(uuid.UUID(user_profile.hash))
+    except Exception:
+        dashed_hash = user_profile.hash
+    return redirect('profiles:profile_detail', hash=dashed_hash)
 
 @login_required
 def edit_profile(request):
