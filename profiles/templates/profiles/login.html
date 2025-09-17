@@ -13,6 +13,9 @@
         <h1>Вход</h1>
         <form method="post" class="auth-form">
             {% csrf_token %}
+            {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
             <div class="form-group">
                 <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
                 {{ form.username }}
@@ -24,7 +27,7 @@
             <button type="submit" class="submit-button">Войти</button>
         </form>
         <div class="auth-links">
-            <a href="{% url 'signup' %}">Нет аккаунта? Зарегистрироваться</a>
+            <a href="{% url 'signup' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Нет аккаунта? Зарегистрироваться</a>
         </div>
     </div>
 </body>
