@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+import uuid
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
@@ -18,7 +19,10 @@ def welcome(request):
     return render(request, 'profiles/welcome.html')
 
 def signup(request):
+    next_url = request.GET.get('next') or request.POST.get('next')
     if request.user.is_authenticated:
+        if next_url:
+            return redirect(next_url)
         return redirect('profiles:profile_detail', hash=request.user.profile.hash)
         
     if request.method == 'POST':
@@ -45,7 +49,9 @@ def signup(request):
 
                 # Входим в систему после фиксации транзакции
                 login(request, user)
-                messages.success(request, 'Регистрация успешна! Теперь заполните свой профиль.')
+                messages.success(request, 'Регистрация успешна!')
+                if next_url:
+                    return redirect(next_url)
                 return redirect('profiles:profile_detail', hash=profile.hash)
             except Exception as e:
                 # Если произошла ошибка, удаляем пользователя, если он был создан
@@ -62,7 +68,7 @@ def signup(request):
     else:
         form = SignUpForm()
     
-    return render(request, 'profiles/signup.html', {'form': form})
+    return render(request, 'profiles/signup.html', {'form': form, 'next': next_url})
 
 @login_required
 def profile_list(request):
@@ -111,6 +117,11 @@ def profile_detail(request, hash):
     if hash != dashed_hash:
         return redirect('profiles:profile_detail', hash=dashed_hash)
 
+    # Если пользователь не авторизован — отправляем на регистрацию, затем вернем сюда
+    if not request.user.is_authenticated:
+        signup_url = reverse('signup')
+        return redirect(f"{signup_url}?next={request.get_full_path()}")
+
     is_owner = request.user.is_authenticated and profile.user == request.user
     return render(request, 'profiles/profile_detail.html', {
         'profile': profile,
@@ -142,6 +153,9 @@ class SmartLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
+        next_url = self.request.GET.get('next') or self.request.POST.get('next')
+        if next_url:
+            return next_url
         user = self.request.user
         # Если есть профиль — в профиль, иначе на создание профиля
         try:
