@@ -147,10 +147,10 @@ def nfc_entry(request, uid):
 
     # Card is not assigned yet
     if not request.user.is_authenticated:
-        # For anonymous users, require signup and return here after
-        signup_url = reverse('signup')
+        # For anonymous users, require signup and return here after, using absolute URL
+        absolute_signup = f"{request.scheme}://{request.get_host()}{reverse('signup')}"
         card.save(update_fields=['first_seen_at', 'last_seen_at', 'tap_count'])
-        return redirect(f"{signup_url}?next={request.get_full_path()}")
+        return redirect(f"{absolute_signup}?next={request.get_full_path()}")
 
     # Authenticated user tapped an unassigned card → assign it to their profile on second tap
     # Ensure the user has a profile
