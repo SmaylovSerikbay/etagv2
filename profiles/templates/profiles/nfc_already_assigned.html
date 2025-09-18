@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта уже привязана</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-container">
+        <h1>Эта NFC‑карта уже привязана</h1>
+        <p>Карта привязана к существующему профилю. Вы не можете просматривать чужой профиль через эту карту.</p>
+        <div class="auth-links">
+            <a class="btn btn-outline" href="{% url 'login' %}?next={{ request.get_full_path }}">Войти</a>
+            <a class="btn btn-primary" href="{% url 'signup' %}?next={{ request.get_full_path }}">Зарегистрироваться</a>
+        </div>
+    </div>
+</body>
+</html>
+

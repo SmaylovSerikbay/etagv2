@@ -118,11 +118,7 @@ def profile_detail(request, hash):
     if hash != dashed_hash:
         return redirect('profiles:profile_detail', hash=dashed_hash)
 
-    # Если пользователь не авторизован — отправляем на регистрацию, затем вернем сюда
-    if not request.user.is_authenticated:
-        signup_url = reverse('signup')
-        return redirect(f"{signup_url}?next={request.get_full_path()}")
-
+    # Разрешаем просмотр профиля без авторизации; владелец определяется только для авторизованных
     is_owner = request.user.is_authenticated and profile.user == request.user
     return render(request, 'profiles/profile_detail.html', {
         'profile': profile,
@@ -140,7 +136,7 @@ def nfc_entry(request, uid):
     card, _ = NfcCard.objects.get_or_create(uid=normalized_uid)
     card.mark_tap()
 
-    # Case 1: Card is already assigned to a profile → always redirect to that profile
+    # Case 1: Card is already assigned to a profile → всем показываем привязанный профиль
     if card.profile:
         card.save(update_fields=['last_seen_at', 'tap_count'])
         try:
