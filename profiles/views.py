@@ -147,10 +147,9 @@ def nfc_entry(request, uid):
 
     # Card is not assigned yet
     if not request.user.is_authenticated:
-        # First touch by an anonymous user → go to signup, with next back to this NFC endpoint
-        signup_url = reverse('signup')
+        # Do not force registration for anonymous users; send them to welcome page
         card.save(update_fields=['first_seen_at', 'last_seen_at', 'tap_count'])
-        return redirect(f"{signup_url}?next={request.get_full_path()}")
+        return redirect('welcome')
 
     # Authenticated user tapped an unassigned card → assign it to their profile on second tap
     # Ensure the user has a profile
