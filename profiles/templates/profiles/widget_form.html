@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="widget-form-container">
+        <div class="widget-form-header">
+            <h1>{{ title }}</h1>
+            <a href="{% url 'profiles:profile_detail' hash=profile.hash %}" class="back-btn" title="Назад">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="widget-form">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.widget_type.id_for_label }}">{{ form.widget_type.label }}</label>
+                    {{ form.widget_type }}
+                    {% if form.widget_type.errors %}
+                        <div class="error">{{ form.widget_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="error">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="error">{{ form.content.errors.0 }}</div>
+                {% endif %}
+                <div class="help-text">
+                    Для кнопок и ссылок укажите URL. Для текста - просто текст.
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.icon.id_for_label }}">{{ form.icon.label }}</label>
+                    {{ form.icon }}
+                    {% if form.icon.errors %}
+                        <div class="error">{{ form.icon.errors.0 }}</div>
+                    {% endif %}
+                    <div class="help-text">
+                        Например: fas fa-heart, fab fa-telegram, fas fa-phone
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
+                    {{ form.color }}
+                    {% if form.color.errors %}
+                        <div class="error">{{ form.color.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
+                    {{ form.order }}
+                    {% if form.order.errors %}
+                        <div class="error">{{ form.order.errors.0 }}</div>
+                    {% endif %}
+                    <div class="help-text">
+                        Чем меньше число, тем выше в списке
+                    </div>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        {{ form.is_active }}
+                        {{ form.is_active.label }}
+                    </label>
+                    {% if form.is_active.errors %}
+                        <div class="error">{{ form.is_active.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Сохранить
+                </button>
+                <a href="{% url 'profiles:profile_detail' hash=profile.hash %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Отмена
+                </a>
+            </div>
+        </form>
+
+        <!-- Предварительный просмотр -->
+        <div class="widget-preview-section">
+            <h3>Предварительный просмотр</h3>
+            <div class="preview-widget" id="preview-widget">
+                <div class="widget-icon">
+                    <i id="preview-icon" class="fas fa-heart"></i>
+                </div>
+                <div class="widget-content">
+                    <h3 id="preview-title" class="widget-title">Название виджета</h3>
+                    <div id="preview-content" class="widget-text">Содержимое виджета</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Обновление предварительного просмотра в реальном времени
+        function updatePreview() {
+            const title = document.getElementById('id_title').value || 'Название виджета';
+            const content = document.getElementById('id_content').value || 'Содержимое виджета';
+            const icon = document.getElementById('id_icon').value || 'fas fa-heart';
+            const color = document.getElementById('id_color').value || '#007AFF';
+            const widgetType = document.getElementById('id_widget_type').value;
+
+            document.getElementById('preview-title').textContent = title;
+            document.getElementById('preview-icon').className = icon;
+            document.getElementById('preview-icon').style.color = color;
+            
+            const previewContent = document.getElementById('preview-content');
+            previewContent.textContent = content;
+            previewContent.style.color = color;
+            
+            const previewWidget = document.getElementById('preview-widget');
+            previewWidget.style.backgroundColor = color + '20';
+            previewWidget.style.borderLeftColor = color;
+
+            // Обновляем стиль в зависимости от типа виджета
+            if (widgetType === 'button' || widgetType === 'link' || widgetType === 'social') {
+                previewContent.innerHTML = `<a href="#" style="color: ${color};">${content}</a>`;
+            } else {
+                previewContent.innerHTML = content;
+            }
+        }
+
+        // Добавляем обработчики событий
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['id_title', 'id_content', 'id_icon', 'id_color', 'id_widget_type'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', updatePreview);
+                    element.addEventListener('change', updatePreview);
+                }
+            });
+            
+            // Инициализируем предварительный просмотр
+            updatePreview();
+        });
+    </script>
+</body>
+</html>

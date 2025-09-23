@@ -58,10 +58,34 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
+                    <div class="form-group">
                             <label for="{{ form.avatar.id_for_label }}">{{ form.avatar.label }}</label>
-                            {{ form.avatar }}
-                            <small class="help-text">{{ form.avatar.help_text }}</small>
+                            <div class="image-input">
+                                <div class="image-row">
+                                    <div class="image-thumb">
+                                        {% if user.profile.avatar %}
+                                            <img src="{{ user.profile.avatar.url }}" alt="Avatar" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;">
+                                        {% else %}
+                                            <div style="width:72px;height:72px;border-radius:12px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="image-meta">
+                                        <div class="file-name" id="avatar-file-name">
+                                            {% if user.profile.avatar %}{{ user.profile.avatar.name }}{% else %}Файл не выбран{% endif %}
+                                        </div>
+                                        <div class="image-actions">
+                                            <button type="button" class="btn btn-outline" onclick="document.querySelector('input[type=file][name=avatar]').click()">Изменить</button>
+                                            {% if user.profile.avatar %}
+                                            <button type="button" class="btn btn-danger" onclick="toggleClear('avatar')">Очистить</button>
+                                            {% endif %}
+                                        </div>
+                                        <small class="help-text">Рекомендуемый размер 100x100</small>
+                                    </div>
+                                </div>
+                                <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
+                                    {{ form.avatar }}
+                                </div>
+                            </div>
                         </div>
                         {% if form.company.errors %}
                         <div class="error">{{ form.company.errors|join:", " }}</div>
@@ -69,8 +93,32 @@
 
                         <div class="form-group">
                             <label for="{{ form.background.id_for_label }}">{{ form.background.label }}</label>
-                            {{ form.background }}
-                            <small class="help-text">{{ form.background.help_text }}</small>
+                            <div class="image-input">
+                                <div class="image-row">
+                                    <div class="image-thumb">
+                                        {% if user.profile.background %}
+                                            <img src="{{ user.profile.background.url }}" alt="Background" style="width:132px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">
+                                        {% else %}
+                                            <div style="width:132px;height:50px;border-radius:8px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="image-meta">
+                                        <div class="file-name" id="background-file-name">
+                                            {% if user.profile.background %}{{ user.profile.background.name }}{% else %}Файл не выбран{% endif %}
+                                        </div>
+                                        <div class="image-actions">
+                                            <button type="button" class="btn btn-outline" onclick="document.querySelector('input[type=file][name=background]').click()">Изменить</button>
+                                            {% if user.profile.background %}
+                                            <button type="button" class="btn btn-danger" onclick="toggleClear('background')">Очистить</button>
+                                            {% endif %}
+                                        </div>
+                                        <small class="help-text">Рекомендуемый размер 530x200</small>
+                                    </div>
+                                </div>
+                                <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
+                                    {{ form.background }}
+                                </div>
+                            </div>
                         </div>
                         {% if form.position.errors %}
                         <div class="error">{{ form.position.errors|join:", " }}</div>
@@ -95,105 +143,14 @@
                     </div>
                 </div>
 
-                <!-- Контакты (включая соцсети) -->
+                <!-- Контакты скрыты: управляются только через виджеты -->
                 <div class="form-section">
                     <h2 class="section-title">Контакты</h2>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
-                            <div class="multi-list" data-field="phone"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="phone">+ Добавить телефон</button>
-                            {{ form.phone }}
-                            {% if form.phone.errors %}
-                            <div class="error">{{ form.phone.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-                            <div class="multi-list" data-field="email"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="email">+ Добавить Email</button>
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                            <div class="error">{{ form.email.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.website.id_for_label }}">{{ form.website.label }}</label>
-                        <div class="multi-list" data-field="website"></div>
-                        <button type="button" class="btn btn-outline add-social" data-field="website">+ Добавить сайт</button>
-                        {{ form.website }}
-                        {% if form.website.errors %}
-                        <div class="error">{{ form.website.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="{{ form.telegram.id_for_label }}">
-                                <i class="fab fa-telegram"></i> {{ form.telegram.label }}
-                            </label>
-                            <div class="multi-list" data-field="telegram"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="telegram">+ Добавить Telegram</button>
-                            {{ form.telegram }}
-                            {% if form.telegram.errors %}
-                            <div class="error">{{ form.telegram.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="{{ form.whatsapp.id_for_label }}">
-                                <i class="fab fa-whatsapp"></i> {{ form.whatsapp.label }}
-                            </label>
-                            <div class="multi-list" data-field="whatsapp"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="whatsapp">+ Добавить WhatsApp</button>
-                            {{ form.whatsapp }}
-                            {% if form.whatsapp.errors %}
-                            <div class="error">{{ form.whatsapp.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="{{ form.instagram.id_for_label }}">
-                                <i class="fab fa-instagram"></i> {{ form.instagram.label }}
-                            </label>
-                            <div class="multi-list" data-field="instagram"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="instagram">+ Добавить Instagram</button>
-                            {{ form.instagram }}
-                            {% if form.instagram.errors %}
-                            <div class="error">{{ form.instagram.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="{{ form.facebook.id_for_label }}">
-                                <i class="fab fa-facebook"></i> {{ form.facebook.label }}
-                            </label>
-                            <div class="multi-list" data-field="facebook"></div>
-                            <button type="button" class="btn btn-outline add-social" data-field="facebook">+ Добавить Facebook</button>
-                            {{ form.facebook }}
-                            {% if form.facebook.errors %}
-                            <div class="error">{{ form.facebook.errors|join:", " }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.linkedin.id_for_label }}">
-                            <i class="fab fa-linkedin"></i> {{ form.linkedin.label }}
-                        </label>
-                        <div class="multi-list" data-field="linkedin"></div>
-                        <button type="button" class="btn btn-outline add-social" data-field="linkedin">+ Добавить LinkedIn</button>
-                        {{ form.linkedin }}
-                        {% if form.linkedin.errors %}
-                        <div class="error">{{ form.linkedin.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
+                    <p class="subtitle">Контакты теперь редактируются только через раздел виджетов.</p>
+                    <a href="{% url 'profiles:widget_templates' %}" class="btn btn-outline">
+                        <i class="fas fa-external-link-alt"></i>
+                        Открыть управление виджетами
+                    </a>
                 </div>
 
                 <div class="form-actions">
@@ -207,94 +164,36 @@
     </div>
 </body>
 <script>
-    (function() {
-        const networks = ['telegram','whatsapp','instagram','facebook','linkedin','phone','email','website'];
-
-        function createRow(value = '') {
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '8px';
-            row.style.marginBottom = '8px';
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'form-control';
-            input.value = value;
-            input.placeholder = value ? value : 'Введите значение';
-            input.style.flex = '1 1 auto';
-            // client-side per-item validation rules per field will be set by caller via dataset
-
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.textContent = 'Удалить';
-            remove.className = 'btn btn-outline';
-            remove.onclick = () => row.remove();
-
-            row.appendChild(input);
-            row.appendChild(remove);
-            return row;
+    function toggleClear(field) {
+        const clearCheckbox = document.querySelector(`input[type=checkbox][name=${field}-clear]`);
+        if (clearCheckbox) {
+            clearCheckbox.checked = true;
+            // UI feedback
+            const nameEl = document.getElementById(`${field}-file-name`);
+            if (nameEl) nameEl.textContent = 'Будет очищено при сохранении';
         }
+    }
 
-        function initField(field) {
-            const hidden = document.querySelector(`input[name="${field}"]`);
-            if (!hidden) return;
-            // hide original field and disable native validation
-            hidden.setAttribute('type', 'hidden');
-            hidden.style.display = 'none';
-            hidden.removeAttribute('required');
-            hidden.removeAttribute('pattern');
-            hidden.setCustomValidity('');
-
-            const list = document.querySelector(`.multi-list[data-field="${field}"]`);
-            const addBtn = document.querySelector(`.add-social[data-field="${field}"]`);
-            if (!list || !addBtn) return;
-
-            const values = (hidden.value || '').split(',').map(v => v.trim()).filter(Boolean);
-            if (values.length === 0) {
-                list.appendChild(createRow(''));
-            } else {
-                values.forEach(v => list.appendChild(createRow(v)));
-            }
-
-            addBtn.addEventListener('click', () => {
-                list.appendChild(createRow(''));
+    document.addEventListener('DOMContentLoaded', function() {
+        const avatarInput = document.querySelector('input[type=file][name=avatar]');
+        const avatarName = document.getElementById('avatar-file-name');
+        if (avatarInput && avatarName) {
+            avatarInput.addEventListener('change', function() {
+                avatarName.textContent = this.files && this.files[0] ? this.files[0].name : 'Файл не выбран';
+                const clearCheckbox = document.querySelector('input[type=checkbox][name=avatar-clear]');
+                if (clearCheckbox) clearCheckbox.checked = false;
             });
         }
 
-        function beforeSubmitAggregate() {
-            const form = document.querySelector('.edit-form');
-            if (!form) return;
-            form.addEventListener('submit', () => {
-                networks.forEach(field => {
-                    const hidden = document.querySelector(`input[name="${field}"]`);
-                    const list = document.querySelector(`.multi-list[data-field="${field}"]`);
-                    if (!hidden || !list) return;
-                    const items = Array.from(list.querySelectorAll('input[type="text"]'))
-                        .map(i => i.value.trim())
-                        .filter(Boolean);
-                    // per-item validations
-                    if (field === 'phone') {
-                        const tooLong = items.find(v => v.length > 20);
-                        if (tooLong) {
-                            alert('Каждый телефон должен быть не длиннее 20 символов. Исправьте значения.');
-                            throw new Error('Phone validation failed');
-                        }
-                    }
-                    const maxMap = { telegram:100, whatsapp:100, instagram:100, facebook:100, twitter:100, linkedin:100 };
-                    if (maxMap[field]) {
-                        const tooLongSocial = items.find(v => v.length > maxMap[field]);
-                        if (tooLongSocial) {
-                            alert(`Каждый ${field} должен быть не длиннее ${maxMap[field]} символов. Исправьте значение.`);
-                            throw new Error('Social validation failed');
-                        }
-                    }
-                    hidden.value = items.join(',');
-                });
+        const bgInput = document.querySelector('input[type=file][name=background]');
+        const bgName = document.getElementById('background-file-name');
+        if (bgInput && bgName) {
+            bgInput.addEventListener('change', function() {
+                bgName.textContent = this.files && this.files[0] ? this.files[0].name : 'Файл не выбран';
+                const clearCheckbox = document.querySelector('input[type=checkbox][name=background-clear]');
+                if (clearCheckbox) clearCheckbox.checked = false;
             });
         }
-
-        networks.forEach(initField);
-        beforeSubmitAggregate();
-    })();
+    });
 </script>
 </html> 
