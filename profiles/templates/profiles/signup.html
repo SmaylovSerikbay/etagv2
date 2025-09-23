@@ -30,16 +30,11 @@
             {% endif %}
             
             <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <div class="error">{{ form.username.errors.0 }}</div>
+                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <div class="error">{{ form.full_name.errors.0 }}</div>
                 {% endif %}
-                {% with ht=form.username.help_text|cut:"Только буквы, цифры и символы @/./+/-/_." %}
-                    {% if ht %}
-                        <div class="help-text">{{ ht|safe }}</div>
-                    {% endif %}
-                {% endwith %}
             </div>
 
             <div class="form-group">
@@ -49,6 +44,8 @@
                     <div class="error">{{ form.email.errors.0 }}</div>
                 {% endif %}
             </div>
+
+            {{ form.username }}
 
             <div class="form-group">
                 <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>

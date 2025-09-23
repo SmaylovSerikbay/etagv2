@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить {{ template.title }} | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="widget-form-container">
+        <div class="widget-form-header">
+            <h1>Добавить {{ template.title }}</h1>
+            <a href="{% url 'profiles:widget_templates' %}" class="back-btn" title="Назад">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form id="templateForm" method="post" action="{{ post_url }}" class="widget-form">
+            {% csrf_token %}
+            <input type="hidden" name="icon" value="{{ template.icon }}">
+            
+            <input type="hidden" name="widget_type" value="{{ template.widget_type }}">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="templateTitle">Название</label>
+                    <input type="text" id="templateTitle" name="title" class="form-control" value="{{ template.title }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="templateContent">Содержимое</label>
+                <input type="text" id="templateContent" name="content" class="form-control" placeholder="{{ template.content_placeholder }}" required>
+                <div class="help-text">{{ template.content_placeholder }}</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="templateColor">Цвет кнопки</label>
+                    <input type="hidden" id="templateColor" name="color" value="{{ template.color }}">
+                    <div class="color-picker" id="colorPicker">
+                        <button type="button" class="color-option" data-color="#10B981" style="--swatch:#10B981" aria-label="Зелёный"></button>
+                        <button type="button" class="color-option" data-color="#F97316" style="--swatch:#F97316" aria-label="Оранжевый"></button>
+                        <button type="button" class="color-option" data-color="#D97706" style="--swatch:#D97706" aria-label="Янтарный"></button>
+                        <button type="button" class="color-option" data-color="#FACC15" style="--swatch:#FACC15" aria-label="Жёлтый"></button>
+                        <button type="button" class="color-option" data-color="#22C55E" style="--swatch:#22C55E" aria-label="Лаймовый"></button>
+                        <button type="button" class="color-option" data-color="#2DD4BF" style="--swatch:#2DD4BF" aria-label="Бирюзовый"></button>
+                        <button type="button" class="color-option" data-color="#3B82F6" style="--swatch:#3B82F6" aria-label="Синий"></button>
+                        <button type="button" class="color-option" data-color="#8B5CF6" style="--swatch:#8B5CF6" aria-label="Фиолетовый"></button>
+                        <button type="button" class="color-option" data-color="#EC4899" style="--swatch:#EC4899" aria-label="Розовый"></button>
+                        <button type="button" class="color-option" data-color="#111111" style="--swatch:#111111" aria-label="Чёрный"></button>
+                        <label class="color-option custom" aria-label="Другой цвет">
+                            <input type="color" id="customColorInput" value="{{ template.color }}" aria-label="Выбрать цвет">
+                        </label>
+                    </div>
+                    <div class="help-text">Выберите один из цветов или задайте свой</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Добавить
+                </button>
+                <a href="{% url 'profiles:widget_templates' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Отмена
+                </a>
+            </div>
+        </form>
+
+        <div class="widget-preview-section">
+            <h3>Предварительный просмотр</h3>
+            <div id="preview-button" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;color:#ffffff;font-weight:600;">
+                <i id="preview-icon" class="{{ template.icon }}" style="font-size:20px;color:#ffffff;"></i>
+                <span id="preview-title">{{ template.title }}</span>
+            </div>
+            <div id="preview-hint" style="margin-top:8px;color:var(--gray-600);font-size:0.9rem;">{{ template.content_placeholder }}</div>
+        </div>
+    </div>
+
+    <script>
+        function updatePreview() {
+            const title = document.getElementById('templateTitle').value || '{{ template.title }}';
+            const color = document.getElementById('templateColor').value || '{{ template.color }}';
+            const content = document.getElementById('templateContent').value || '';
+
+            const previewBtn = document.getElementById('preview-button');
+            const previewTitle = document.getElementById('preview-title');
+            const previewIcon = document.getElementById('preview-icon');
+            const previewHint = document.getElementById('preview-hint');
+
+            previewBtn.style.backgroundColor = color;
+            previewIcon.style.color = '#ffffff';
+            previewTitle.style.color = '#ffffff';
+            previewTitle.textContent = title;
+            previewHint.textContent = content || '{{ template.content_placeholder }}';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('templateTitle').addEventListener('input', updatePreview);
+            document.getElementById('templateContent').addEventListener('input', updatePreview);
+            // Обработчики выбора цвета
+            const hiddenColor = document.getElementById('templateColor');
+            const picker = document.getElementById('colorPicker');
+            picker.addEventListener('click', function(e){
+                const btn = e.target.closest('.color-option:not(.custom)');
+                if (!btn) return;
+                const color = btn.getAttribute('data-color');
+                hiddenColor.value = color;
+                // визуальная активность
+                picker.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+                updatePreview();
+            });
+            const customInput = document.getElementById('customColorInput');
+            if (customInput) {
+                customInput.addEventListener('input', function(){
+                    hiddenColor.value = this.value;
+                    picker.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+                    customInput.parentElement.classList.add('active');
+                    updatePreview();
+                });
+            }
+            // Установим активный по умолчанию
+            const initial = hiddenColor.value || '{{ template.color }}';
+            const initialBtn = picker.querySelector(`.color-option[data-color="${initial}"]`);
+            if (initialBtn) initialBtn.classList.add('active'); else customInput && customInput.parentElement.classList.add('active');
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
+

@@ -153,3 +153,32 @@ class NfcCard(models.Model):
     class Meta:
         verbose_name = 'NFC карта'
         verbose_name_plural = 'NFC карты'
+
+
+class ProfileWidget(models.Model):
+    WIDGET_TYPES = [
+        ('button', 'Кнопка'),
+        ('link', 'Ссылка'),
+        ('text', 'Текст'),
+        ('social', 'Социальная сеть'),
+        ('contact', 'Контакт'),
+    ]
+    
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='widgets')
+    widget_type = models.CharField(max_length=20, choices=WIDGET_TYPES, default='button')
+    title = models.CharField(max_length=100, verbose_name='Название')
+    content = models.TextField(verbose_name='Содержимое/URL')
+    icon = models.CharField(max_length=50, blank=True, verbose_name='Иконка (Font Awesome)')
+    color = models.CharField(max_length=7, default='#007AFF', verbose_name='Цвет')
+    is_active = models.BooleanField(default=True, verbose_name='Активен')
+    order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.get_widget_type_display()})"
+
+    class Meta:
+        verbose_name = 'Виджет профиля'
+        verbose_name_plural = 'Виджеты профиля'
+        ordering = ['order', 'created_at']

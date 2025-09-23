@@ -510,12 +510,36 @@ p  { color: var(--gray-700); font-size: 16px; }
     grid-template-columns: 1fr;
     gap: 1rem;
     margin-bottom: 1rem;
+    overflow: visible;
+}
+
+/* Обеспечить, чтобы карточки контактов не выходили за рамки контейнера */
+.social-card {
+    max-width: 100%;
+}
+.social-card-link {
+    min-width: 0;
+}
+.social-card i,
+.social-card span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* На узких экранах уменьшаем внутренние отступы, чтобы избежать переполнения */
+@media (max-width: 400px) {
+    .social-card {
+        padding: 0.875rem 1rem;
+    }
+    .social-card-link {
+        padding-right: 56px;
+    }
 }
 
 .social-card {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
     border-radius: var(--radius-md);
@@ -523,15 +547,148 @@ p  { color: var(--gray-700); font-size: 16px; }
     color: white;
     font-weight: 600;
     transition: transform 0.2s ease, filter 0.2s ease;
+    min-height: 60px;
+    position: relative;
+    cursor: default;
 }
 
 .social-card:hover {
     transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.social-card:active { cursor: default; }
+
+.social-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
 }
 
 .social-card i {
     font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
 }
+
+.social-card span {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.social-card-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+    text-decoration: none;
+    flex: 1;
+    padding-right: 72px; /* reserve space for right drag handle + menu */
+}
+
+.social-card-link:hover {
+    color: white;
+    text-decoration: none;
+}
+
+.drag-handle {
+    position: absolute;
+    right: 44px; /* invisible drag zone left of the menu button */
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    cursor: default; /* do not show grab cursor */
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+.drag-handle i { display: none; }
+.card-menu {
+    position: absolute;
+    top: 50%;
+    right: 16px; /* flush to the right edge */
+    transform: translateY(-50%);
+    z-index: 5;
+}
+
+.card-menu-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.18);
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: transform 0.2s ease;
+}
+
+.card-menu-btn i { display: inline-block; font-size: 18px; line-height: 1; }
+
+.card-menu-btn::before { content: none; }
+
+.card-menu-btn:hover { transform: translateY(-1px); }
+
+.card-dropdown {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    display: none;
+    min-width: 180px;
+    background: white;
+    color: var(--gray-900);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.card-dropdown.show { display: block; }
+
+/* Всплытие вверх, если места снизу мало */
+.card-dropdown.flip-up {
+    top: auto;
+    bottom: 38px;
+}
+
+.social-card.menu-open {
+    position: relative;
+    z-index: 9999;
+    overflow: visible;
+    transform: none; /* avoid new stacking context from hover transform */
+}
+
+.card-action {
+    width: 100%;
+    background: white;
+    border: none;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--gray-800);
+}
+
+.card-action:hover {
+    background: var(--gray-100);
+}
+
+.card-action.danger { color: #DC2626; }
+
+
+.drag-handle:hover { background: transparent; }
+
+.social-card:hover .drag-handle {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.social-card:active .drag-handle { cursor: default; }
 
 .social-card.telegram { background: #0088cc; }
 .social-card.whatsapp { background: #25D366; }
@@ -546,6 +703,17 @@ p  { color: var(--gray-700); font-size: 16px; }
 .social-card.website { background: #6B6B6B; }
 
 /* QR код и действия */
+/* Неактивные (скрытые) виджеты для владельца */
+.social-card.inactive {
+    background: #D9D9D9 !important;
+    color: #ffffff;
+    filter: none;
+}
+
+.social-card.inactive .social-card-link { pointer-events: none; }
+.social-card.inactive .social-card-link i { color: #ffffff; }
+.social-card.inactive .social-card-link span { color: #ffffff; }
+.social-card.inactive .drag-handle { color: rgba(255,255,255,0.7); }
 .actions-section {
     text-align: center;
 }
@@ -1442,5 +1610,852 @@ button[type="submit"]:hover {
     .mobile-menu-btn {
         display: none;
 
+    }
+}
+
+/* Стили для виджетов */
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.widget-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.widget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.widget-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.widget-icon i {
+    font-size: 1.5rem;
+}
+
+.widget-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.widget-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.widget-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity 0.2s ease;
+}
+
+.widget-link:hover {
+    opacity: 0.8;
+}
+
+.widget-text,
+.widget-contact {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* Кнопка добавления виджетов */
+.add-widget-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.add-widget-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.add-widget-btn i {
+    font-size: 1.5rem;
+}
+
+/* Стили для страниц управления виджетами */
+.widgets-container,
+.widget-form-container,
+.delete-container {
+    min-height: 100vh;
+    background: white;
+    padding: 2rem 1.5rem;
+}
+
+.widgets-header,
+.widget-form-header,
+.delete-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+}
+
+.widgets-header h1,
+.widget-form-header h1,
+.delete-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    background: var(--gray-200);
+    transform: translateX(-2px);
+}
+
+.widgets-actions {
+    margin-bottom: 2rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+}
+
+.btn-outline {
+    background: white;
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+}
+
+.btn-outline:hover {
+    background: var(--gray-50);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #DC2626;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+}
+
+/* Виджеты в списке */
+.widget-item {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.widget-item:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.widget-item.inactive {
+    opacity: 0.6;
+}
+
+.widget-preview {
+    padding: 1.5rem;
+}
+
+.widget-actions {
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.widget-type {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.widget-preview-text {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--gray-500);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--gray-300);
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+}
+
+.empty-state p {
+    margin-bottom: 2rem;
+    color: var(--gray-600);
+}
+
+/* Форма виджета */
+.widget-form {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Предварительный просмотр */
+.widget-preview-section {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+
+/* Ограничение ширины формы создания по шаблону и секции превью */
+#templateForm {
+    max-width: 752px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.widget-preview-section {
+    max-width: 752px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Селектор цветов как в примере */
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.color-option {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 2px solid var(--gray-200);
+    background: var(--swatch);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.color-option:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.color-option.active { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
+
+.color-option.custom {
+    background: conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+    position: relative;
+    overflow: hidden;
+}
+
+.color-option.custom input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.widget-preview-section h3 {
+    font-size: 1.125rem;
+    color: var(--gray-700);
+    margin-bottom: 1rem;
+}
+
+.preview-widget {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
+
+/* Удаление виджета */
+.delete-content {
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.warning-icon {
+    font-size: 4rem;
+    color: var(--warning);
+    margin-bottom: 1rem;
+}
+
+.delete-content h2 {
+    font-size: 1.5rem;
+    color: var(--gray-900);
+    margin-bottom: 1.5rem;
+}
+
+.warning-text {
+    color: var(--gray-600);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.delete-form {
+    margin-top: 2rem;
+}
+
+/* Адаптивность для виджетов */
+@media (max-width: 768px) {
+    .widgets-container,
+    .widget-form-container,
+    .delete-container {
+        padding: 1rem;
+    }
+
+    .widgets-header,
+    .widget-form-header,
+    .delete-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .widgets-header h1,
+    .widget-form-header h1,
+    .delete-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .widgets-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .widget-card {
+        padding: 1rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .add-widget-btn {
+        bottom: 1rem;
+        right: 1rem;
+        width: 48px;
+        height: 48px;
+    }
+
+    .add-widget-btn i {
+        font-size: 1.25rem;
+    }
+}
+
+/* Стили для страницы шаблонов виджетов */
+.templates-container {
+    min-height: 100vh;
+    background: white;
+    padding: 2rem 1.5rem;
+}
+
+.templates-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.templates-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+/* Вкладки */
+.tabs-container {
+    margin-bottom: 2rem;
+}
+
+.tabs {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    gap: 4px;
+}
+
+.tab-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-button.active {
+    background: white;
+    color: var(--gray-900);
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-button:hover:not(.active) {
+    color: var(--gray-800);
+}
+
+.tab-count {
+    background: var(--gray-200);
+    color: var(--gray-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+.tab-button.active .tab-count {
+    background: var(--primary);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Сетка шаблонов */
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.template-card {
+    position: relative;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+}
+
+/* Убираем подчёркивание ссылок-карточек на странице шаблонов */
+a.template-card:link,
+a.template-card:visited,
+a.template-card:hover,
+a.template-card:active {
+    text-decoration: none;
+    color: inherit;
+}
+
+.template-title,
+.template-description {
+    text-decoration: none;
+}
+
+.template-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.template-preview {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.template-preview i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.template-card:hover .template-preview {
+    transform: scale(1.1);
+}
+
+.template-info { margin: 0; }
+
+.template-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.template-description {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.template-add-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    border: none;
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.template-card:hover .template-add-btn {
+    opacity: 1;
+}
+
+.template-add-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Модальное окно для шаблона */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    opacity: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-xl);
+    position: relative;
+    max-width: 90%;
+    width: 500px;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal.show .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.close-modal {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    border: none;
+    color: var(--gray-600);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-modal:hover {
+    background: var(--gray-200);
+    color: var(--gray-800);
+}
+
+#templateForm {
+    padding: 2rem;
+}
+
+#templateForm .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#templateForm .form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+#templateForm .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+#templateForm .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+#templateForm .help-text {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+#templateForm .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Адаптивность для шаблонов */
+@media (max-width: 768px) {
+    .templates-container {
+        padding: 1rem;
+    }
+
+    .templates-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .templates-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .templates-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .template-card {
+        padding: 1rem;
+    }
+
+    .template-preview {
+        width: 50px;
+        height: 50px;
+    }
+
+    .template-preview i {
+        font-size: 1.25rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-header,
+    #templateForm {
+        padding: 1.5rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
     }
 }

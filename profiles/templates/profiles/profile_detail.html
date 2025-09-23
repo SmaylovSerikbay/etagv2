@@ -32,6 +32,7 @@
     </div>
 
     <div class="profile-container">
+        {% csrf_token %}
         <!-- Шапка профиля -->
         <div class="profile-header {% if profile.background %}has-bg{% else %}no-bg{% endif %}">
             {% if profile.background %}
@@ -176,78 +177,237 @@
             </div>
             {% endif %}
 
-            <!-- Контакты (Соцсети + Контактные данные) -->
-            {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin or profile.phone or profile.email or profile.website %}
+            <!-- Контакты (Соцсети + Контактные данные + Виджеты) -->
+            {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin or profile.phone or profile.email or profile.website or profile.widgets.all %}
             <div class="profile-section">
                 <h2 class="section-title">Контакты</h2>
 
-                {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin %}
-                <div class="social-grid">
+        <div class="social-grid" id="contactsContainer" {% if is_owner %}data-sortable="true"{% endif %}>
+                    <!-- Существующие контакты -->
                     {% for tg in profile.telegram_list %}
-                    <a href="https://t.me/{{ tg }}" class="social-card telegram">
-                        <i class="fab fa-telegram-plane"></i>
-                        <span>Telegram</span>
-                    </a>
+                    <div class="social-card telegram" data-type="telegram" data-value="{{ tg }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="https://t.me/{{ tg }}" class="social-card-link">
+                            <i class="fab fa-telegram-plane"></i>
+                            <span>Telegram</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for wa in profile.whatsapp_list %}
-                    <a href="https://wa.me/{{ wa }}" class="social-card whatsapp">
-                        <i class="fab fa-whatsapp"></i>
-                        <span>WhatsApp</span>
-                    </a>
+                    <div class="social-card whatsapp" data-type="whatsapp" data-value="{{ wa }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="https://wa.me/{{ wa }}" class="social-card-link">
+                            <i class="fab fa-whatsapp"></i>
+                            <span>WhatsApp</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for ig in profile.instagram_list %}
-                    <a href="https://instagram.com/{{ ig }}" class="social-card instagram">
-                        <i class="fab fa-instagram"></i>
-                        <span>Instagram</span>
-                    </a>
+                    <div class="social-card instagram" data-type="instagram" data-value="{{ ig }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="https://instagram.com/{{ ig }}" class="social-card-link">
+                            <i class="fab fa-instagram"></i>
+                            <span>Instagram</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for fb in profile.facebook_list %}
-                    <a href="https://facebook.com/{{ fb }}" class="social-card facebook">
-                        <i class="fab fa-facebook-f"></i>
-                        <span>Facebook</span>
-                    </a>
+                    <div class="social-card facebook" data-type="facebook" data-value="{{ fb }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="https://facebook.com/{{ fb }}" class="social-card-link">
+                            <i class="fab fa-facebook-f"></i>
+                            <span>Facebook</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for li in profile.linkedin_list %}
-                    <a href="https://linkedin.com/in/{{ li }}" class="social-card linkedin">
-                        <i class="fab fa-linkedin-in"></i>
-                        <span>LinkedIn</span>
-                    </a>
+                    <div class="social-card linkedin" data-type="linkedin" data-value="{{ li }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="https://linkedin.com/in/{{ li }}" class="social-card-link">
+                            <i class="fab fa-linkedin-in"></i>
+                            <span>LinkedIn</span>
+                        </a>
+                    </div>
                     {% endfor %}
-                </div>
-                {% endif %}
 
-                {% if profile.phone or profile.email or profile.website %}
-                <div class="social-grid">
                     {% for ph in profile.phone_list %}
-                    <a href="tel:{{ ph }}" class="social-card phone">
-                        <i class="fas fa-phone"></i>
-                        <span>Номер телефона</span>
-                    </a>
+                    <div class="social-card phone" data-type="phone" data-value="{{ ph }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="tel:{{ ph }}" class="social-card-link">
+                            <i class="fas fa-phone"></i>
+                            <span>Номер телефона</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for em in profile.email_list %}
-                    <a href="mailto:{{ em }}" class="social-card email">
-                        <i class="fas fa-envelope"></i>
-                        <span>Электронная Почта</span>
-                    </a>
+                    <div class="social-card email" data-type="email" data-value="{{ em }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            {% if is_owner %}
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <a href="mailto:{{ em }}" class="social-card-link">
+                            <i class="fas fa-envelope"></i>
+                            <span>Электронная Почта</span>
+                        </a>
+                    </div>
                     {% endfor %}
 
                     {% for wb in profile.website_list %}
-                    <a href="{{ wb }}" target="_blank" class="social-card website">
-                        <i class="fas fa-globe"></i>
-                        <span>Мой Сайт</span>
-                    </a>
+                    <div class="social-card website" data-type="website" data-value="{{ wb }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            {% if is_owner %}
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <a href="{{ wb }}" target="_blank" class="social-card-link">
+                            <i class="fas fa-globe"></i>
+                            <span>Мой Сайт</span>
+                        </a>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Пользовательские виджеты в том же стиле -->
+                    {% for widget in profile.widgets.all %}
+                        {% if widget.is_active or is_owner %}
+                            <div class="social-card {% if not widget.is_active %}inactive{% endif %}" data-type="widget" data-widget-id="{{ widget.id }}" style="{% if widget.is_active %}background-color: {{ widget.color }};{% else %}background-color: #D9D9D9;{% endif %}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                                {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                                {% if is_owner %}
+                                <div class="card-menu">
+                                    <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                                    <div class="card-dropdown">
+                                        <button class="card-action" data-action="edit">Редактировать</button>
+                                        <button class="card-action" data-action="duplicate">Дублировать</button>
+                                        {% if widget.is_active %}
+                                        <button class="card-action" data-action="hide">Скрыть</button>
+                                        {% else %}
+                                        <button class="card-action" data-action="hide">Показать</button>
+                                        {% endif %}
+                                        <button class="card-action danger" data-action="delete">Удалить</button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if widget.widget_type == 'button' or widget.widget_type == 'link' %}
+                                    <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <span>{{ widget.title }}</span>
+                                    </a>
+                                {% elif widget.widget_type == 'social' %}
+                                    <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <span>{{ widget.title }}</span>
+                                    </a>
+                                {% elif widget.widget_type == 'contact' %}
+                                    <a href="{{ widget.content }}" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <span>{{ widget.title }}</span>
+                                    </a>
+                                {% else %}
+                                    <div class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <span>{{ widget.title }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
-                {% endif %}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Кнопка добавления виджетов (только для владельца) -->
+    {% if is_owner %}
+    <a href="{% url 'profiles:widget_templates' %}" class="add-widget-btn" title="Добавить кнопку или виджет">
+        <i class="fas fa-plus"></i>
+    </a>
+    {% endif %}
 
     <script>
         // Модальное окно
@@ -458,6 +618,213 @@
             // Запускаем создание и скачивание vCard
             createAndDownloadVCard().catch(console.error);
         }
+
+        // Drag & Drop функционал для контактов
+        {% if is_owner %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('contactsContainer');
+            if (!container || !container.dataset.sortable) return;
+
+            let draggedElement = null;
+            let draggedIndex = null;
+            // Разрешаем перетаскивание всей карточки, кроме кликов по интерактивным элементам
+            container.querySelectorAll('.social-card').forEach(card => card.setAttribute('draggable', 'true'));
+
+            // Добавляем обработчики событий для всех перетаскиваемых элементов
+            container.addEventListener('dragstart', function(e) {
+                if (e.target.classList.contains('social-card')) {
+                    const interactive = e.target.querySelector('.card-menu, .card-menu-btn, .card-dropdown, a');
+                    if (interactive && (e.target.closest('.card-menu') || e.target.closest('.card-menu-btn') || e.target.closest('.card-dropdown') || e.target.closest('a'))) {
+                        e.preventDefault();
+                        return;
+                    }
+                    draggedElement = e.target;
+                    draggedIndex = Array.from(container.children).indexOf(draggedElement);
+                    e.target.style.opacity = '0.5';
+                    e.target.classList.add('dragging');
+                }
+            });
+
+            container.addEventListener('dragend', function(e) {
+                if (e.target.classList.contains('social-card')) {
+                    e.target.style.opacity = '1';
+                    e.target.classList.remove('dragging');
+                    draggedElement = null;
+                    draggedIndex = null;
+                }
+            });
+
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                
+                if (afterElement == null) {
+                    container.appendChild(dragging);
+                } else {
+                    container.insertBefore(dragging, afterElement);
+                }
+            });
+
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (draggedElement) {
+                    // Сохраняем новый порядок
+                    saveContactOrder();
+                }
+            });
+
+            // Контекстное меню карточек (три точки)
+            container.addEventListener('click', function(e) {
+                const menuBtn = e.target.closest('.card-menu-btn');
+                if (menuBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // закрыть другие
+                    container.querySelectorAll('.card-dropdown.show').forEach(dd => {
+                        if (!menuBtn.nextElementSibling || dd !== menuBtn.nextElementSibling) dd.classList.remove('show');
+                    });
+                    const dropdown = menuBtn.parentElement.querySelector('.card-dropdown');
+                    if (dropdown) {
+                        const card = menuBtn.closest('.social-card');
+                        const willShow = !dropdown.classList.contains('show');
+                        dropdown.classList.toggle('show');
+                        if (willShow) {
+                            // Решаем, где показать: вниз или вверх
+                            // вычислим положение относительно окна
+                            const buttonRect = menuBtn.getBoundingClientRect();
+                            const availableBelow = window.innerHeight - buttonRect.bottom;
+                            dropdown.classList.toggle('flip-up', availableBelow < 180);
+                        }
+                        if (card) card.classList.toggle('menu-open', willShow);
+                    }
+                    return;
+                }
+
+                const actionBtn = e.target.closest('.card-action');
+                if (actionBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const action = actionBtn.dataset.action;
+                    const card = actionBtn.closest('.social-card');
+                    if (!card) return;
+                    // закрыть меню
+                    const dd = actionBtn.closest('.card-dropdown');
+                    if (dd) dd.classList.remove('show');
+
+                    if (action === 'edit') {
+                        const widgetId = card.dataset.widgetId;
+                        if (widgetId) {
+                            window.location.href = '{% url "profiles:widget_edit" 0 %}'.replace('/0/', `/${widgetId}/`);
+                        }
+                        return;
+                    } else if (action === 'duplicate') {
+                        const widgetId = card.dataset.widgetId;
+                        if (widgetId) {
+                            fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                            }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                        }
+                    } else if (action === 'hide') {
+                        const widgetId = card.dataset.widgetId;
+                        if (!widgetId) return;
+                        const isInactive = card.classList.contains('inactive');
+                        const url = isInactive
+                            ? '{% url "profiles:widget_show_api" 0 %}'.replace('/0/', `/${widgetId}/`)
+                            : '{% url "profiles:widget_hide_api" 0 %}'.replace('/0/', `/${widgetId}/`);
+                        fetch(url, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                        }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                    } else if (action === 'delete') {
+                        const widgetId = card.dataset.widgetId;
+                        if (confirm('Удалить этот контакт?')) {
+                            if (widgetId) {
+                                fetch('{% url "profiles:widget_delete_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
+                                    method: 'POST',
+                                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                                }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                            } else {
+                                card.remove();
+                                saveContactOrder();
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Закрытие меню по клику вне
+            document.addEventListener('click', function() {
+                container.querySelectorAll('.card-dropdown.show').forEach(dd => {
+                    dd.classList.remove('show');
+                    const card = dd.closest('.social-card');
+                    if (card) card.classList.remove('menu-open');
+                });
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.social-card:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            function saveContactOrder() {
+                const contacts = Array.from(container.children);
+                const orderData = [];
+                
+                contacts.forEach((contact, index) => {
+                    const type = contact.dataset.type;
+                    const value = contact.dataset.value;
+                    const widgetId = contact.dataset.widgetId;
+                    
+                    if (type === 'widget' && widgetId) {
+                        orderData.push({
+                            type: 'widget',
+                            id: widgetId,
+                            order: index
+                        });
+                    } else if (type && value) {
+                        orderData.push({
+                            type: type,
+                            value: value,
+                            order: index
+                        });
+                    }
+                });
+
+                // Отправляем данные на сервер
+                fetch('{% url "profiles:update_contact_order" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ order: orderData })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Порядок контактов сохранен');
+                    } else {
+                        console.error('Ошибка при сохранении порядка:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+            }
+        });
+        {% endif %}
     </script>
 </body>
 </html>

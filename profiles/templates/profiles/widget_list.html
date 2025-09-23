@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои виджеты | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="widgets-container">
+        <div class="widgets-header">
+            <h1>Мои виджеты</h1>
+            <a href="{% url 'profiles:profile_detail' hash=profile.hash %}" class="back-btn" title="Назад">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="widgets-actions">
+            <a href="{% url 'profiles:widget_templates' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Добавить кнопку или виджет
+            </a>
+            <a href="{% url 'profiles:widget_create' %}" class="btn btn-outline">
+                <i class="fas fa-cog"></i>
+                Создать кастомный виджет
+            </a>
+        </div>
+
+        {% if widgets %}
+        <div class="widgets-grid">
+            {% for widget in widgets %}
+            <div class="widget-item {% if not widget.is_active %}inactive{% endif %}">
+                <div class="widget-preview" style="background-color: {{ widget.color }}20; border-left: 4px solid {{ widget.color }};">
+                    {% if widget.icon %}
+                    <div class="widget-icon">
+                        <i class="{{ widget.icon }}" style="color: {{ widget.color }};"></i>
+                    </div>
+                    {% endif %}
+                    <div class="widget-content">
+                        <h3 class="widget-title">{{ widget.title }}</h3>
+                        <p class="widget-type">{{ widget.get_widget_type_display }}</p>
+                        <p class="widget-preview-text">{{ widget.content|truncatechars:50 }}</p>
+                    </div>
+                </div>
+                <div class="widget-actions">
+                    <a href="{% url 'profiles:widget_edit' widget_id=widget.id %}" class="btn btn-sm btn-outline">
+                        <i class="fas fa-edit"></i>
+                        Редактировать
+                    </a>
+                    <a href="{% url 'profiles:widget_delete' widget_id=widget.id %}" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Удалить
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-puzzle-piece"></i>
+            <h3>У вас пока нет виджетов</h3>
+            <p>Создайте свой первый виджет, чтобы персонализировать профиль</p>
+            <a href="{% url 'profiles:widget_templates' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Добавить кнопку или виджет
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

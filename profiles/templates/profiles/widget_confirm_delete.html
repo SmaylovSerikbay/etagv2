@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Удаление виджета | My Business Card</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="delete-container">
+        <div class="delete-header">
+            <h1>Удаление виджета</h1>
+            <a href="{% url 'profiles:widget_list' %}" class="back-btn" title="Назад">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        <div class="delete-content">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <h2>Вы уверены, что хотите удалить этот виджет?</h2>
+            
+            <div class="widget-preview" style="background-color: {{ widget.color }}20; border-left: 4px solid {{ widget.color }};">
+                {% if widget.icon %}
+                <div class="widget-icon">
+                    <i class="{{ widget.icon }}" style="color: {{ widget.color }};"></i>
+                </div>
+                {% endif %}
+                <div class="widget-content">
+                    <h3 class="widget-title">{{ widget.title }}</h3>
+                    <p class="widget-type">{{ widget.get_widget_type_display }}</p>
+                    <p class="widget-preview-text">{{ widget.content|truncatechars:100 }}</p>
+                </div>
+            </div>
+
+            <p class="warning-text">
+                Это действие нельзя отменить. Виджет будет полностью удален из вашего профиля.
+            </p>
+
+            <form method="post" class="delete-form">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Да, удалить
+                    </button>
+                    <a href="{% url 'profiles:widget_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
