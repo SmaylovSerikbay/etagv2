@@ -31,22 +31,12 @@
         <form method="post" class="widget-form">
             {% csrf_token %}
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="{{ form.widget_type.id_for_label }}">{{ form.widget_type.label }}</label>
-                    {{ form.widget_type }}
-                    {% if form.widget_type.errors %}
-                        <div class="error">{{ form.widget_type.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
-                    {{ form.title }}
-                    {% if form.title.errors %}
-                        <div class="error">{{ form.title.errors.0 }}</div>
-                    {% endif %}
-                </div>
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="error">{{ form.title.errors.0 }}</div>
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -55,59 +45,39 @@
                 {% if form.content.errors %}
                     <div class="error">{{ form.content.errors.0 }}</div>
                 {% endif %}
-                <div class="help-text">
-                    Для кнопок и ссылок укажите URL. Для текста - просто текст.
-                </div>
+                <div class="help-text">Введите содержимое</div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="{{ form.icon.id_for_label }}">{{ form.icon.label }}</label>
-                    {{ form.icon }}
-                    {% if form.icon.errors %}
-                        <div class="error">{{ form.icon.errors.0 }}</div>
-                    {% endif %}
-                    <div class="help-text">
-                        Например: fas fa-heart, fab fa-telegram, fas fa-phone
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
-                    {{ form.color }}
-                    {% if form.color.errors %}
-                        <div class="error">{{ form.color.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
-                    {{ form.order }}
-                    {% if form.order.errors %}
-                        <div class="error">{{ form.order.errors.0 }}</div>
-                    {% endif %}
-                    <div class="help-text">
-                        Чем меньше число, тем выше в списке
-                    </div>
-                </div>
-                
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                        {{ form.is_active }}
-                        {{ form.is_active.label }}
+            <div class="form-group">
+                <label for="id_color">Цвет кнопки</label>
+                <input type="hidden" id="id_color_hidden" name="color" value="{{ form.initial.color|default:'#111111' }}">
+                <div class="color-picker" id="colorPicker">
+                    <button type="button" class="color-option" data-color="#10B981" style="--swatch:#10B981" aria-label="Зелёный"></button>
+                    <button type="button" class="color-option" data-color="#F97316" style="--swatch:#F97316" aria-label="Оранжевый"></button>
+                    <button type="button" class="color-option" data-color="#D97706" style="--swatch:#D97706" aria-label="Янтарный"></button>
+                    <button type="button" class="color-option" data-color="#FACC15" style="--swatch:#FACC15" aria-label="Жёлтый"></button>
+                    <button type="button" class="color-option" data-color="#22C55E" style="--swatch:#22C55E" aria-label="Лаймовый"></button>
+                    <button type="button" class="color-option" data-color="#2DD4BF" style="--swatch:#2DD4BF" aria-label="Бирюзовый"></button>
+                    <button type="button" class="color-option" data-color="#3B82F6" style="--swatch:#3B82F6" aria-label="Синий"></button>
+                    <button type="button" class="color-option" data-color="#8B5CF6" style="--swatch:#8B5CF6" aria-label="Фиолетовый"></button>
+                    <button type="button" class="color-option" data-color="#EC4899" style="--swatch:#EC4899" aria-label="Розовый"></button>
+                    <button type="button" class="color-option" data-color="#111111" style="--swatch:#111111" aria-label="Чёрный"></button>
+                    <label class="color-option custom" aria-label="Другой цвет">
+                        <input type="color" id="customColorInput" value="{{ form.initial.color|default:'#111111' }}" aria-label="Выбрать цвет">
                     </label>
-                    {% if form.is_active.errors %}
-                        <div class="error">{{ form.is_active.errors.0 }}</div>
-                    {% endif %}
                 </div>
+                <div class="help-text">Выберите один из цветов или задайте свой</div>
             </div>
+
+            {{ form.widget_type.as_hidden }}
+            {{ form.icon.as_hidden }}
+            {{ form.is_active.as_hidden }}
+            {{ form.order.as_hidden }}
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Сохранить
+                <button type="submit" class="btn btn-primary" style="background:#000;border-color:#000;">
+                    <i class="fas fa-plus"></i>
+                    Добавить
                 </button>
                 <a href="{% url 'profiles:profile_detail' hash=profile.hash %}" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
@@ -119,50 +89,37 @@
         <!-- Предварительный просмотр -->
         <div class="widget-preview-section">
             <h3>Предварительный просмотр</h3>
-            <div class="preview-widget" id="preview-widget">
-                <div class="widget-icon">
-                    <i id="preview-icon" class="fas fa-heart"></i>
-                </div>
-                <div class="widget-content">
-                    <h3 id="preview-title" class="widget-title">Название виджета</h3>
-                    <div id="preview-content" class="widget-text">Содержимое виджета</div>
-                </div>
+            <div id="preview-button" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;color:#ffffff;font-weight:600;background:#111111;">
+                <i id="preview-icon" class="fas fa-cog" style="font-size:20px;color:#ffffff;"></i>
+                <span id="preview-title">Ваша кнопка</span>
             </div>
+            <div id="preview-hint" style="margin-top:8px;color:var(--gray-600);font-size:0.9rem;">Введите содержимое</div>
         </div>
     </div>
 
     <script>
-        // Обновление предварительного просмотра в реальном времени
         function updatePreview() {
-            const title = document.getElementById('id_title').value || 'Название виджета';
-            const content = document.getElementById('id_content').value || 'Содержимое виджета';
-            const icon = document.getElementById('id_icon').value || 'fas fa-heart';
-            const color = document.getElementById('id_color').value || '#007AFF';
-            const widgetType = document.getElementById('id_widget_type').value;
+            const title = document.getElementById('id_title').value || 'Ваша кнопка';
+            const content = document.getElementById('id_content').value || 'Введите содержимое';
+            const icon = document.getElementById('id_icon') ? document.getElementById('id_icon').value : 'fas fa-cog';
+            const color = document.getElementById('id_color_hidden').value || '#111111';
 
-            document.getElementById('preview-title').textContent = title;
-            document.getElementById('preview-icon').className = icon;
-            document.getElementById('preview-icon').style.color = color;
-            
-            const previewContent = document.getElementById('preview-content');
-            previewContent.textContent = content;
-            previewContent.style.color = color;
-            
-            const previewWidget = document.getElementById('preview-widget');
-            previewWidget.style.backgroundColor = color + '20';
-            previewWidget.style.borderLeftColor = color;
+            const previewBtn = document.getElementById('preview-button');
+            const previewTitle = document.getElementById('preview-title');
+            const previewIcon = document.getElementById('preview-icon');
+            const previewHint = document.getElementById('preview-hint');
 
-            // Обновляем стиль в зависимости от типа виджета
-            if (widgetType === 'button' || widgetType === 'link' || widgetType === 'social') {
-                previewContent.innerHTML = `<a href="#" style="color: ${color};">${content}</a>`;
-            } else {
-                previewContent.innerHTML = content;
-            }
+            previewBtn.style.backgroundColor = color;
+            previewIcon.className = icon || 'fas fa-phone';
+            previewIcon.style.color = '#ffffff';
+            previewTitle.style.color = '#ffffff';
+            previewTitle.textContent = title;
+            previewHint.textContent = content;
         }
 
         // Добавляем обработчики событий
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = ['id_title', 'id_content', 'id_icon', 'id_color', 'id_widget_type'];
+            const inputs = ['id_title', 'id_content', 'id_icon'];
             inputs.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -170,8 +127,30 @@
                     element.addEventListener('change', updatePreview);
                 }
             });
-            
-            // Инициализируем предварительный просмотр
+            // Цветоподбор как на шаблоне
+            const hiddenColor = document.getElementById('id_color_hidden');
+            const picker = document.getElementById('colorPicker');
+            picker.addEventListener('click', function(e){
+                const btn = e.target.closest('.color-option:not(.custom)');
+                if (!btn) return;
+                const color = btn.getAttribute('data-color');
+                hiddenColor.value = color;
+                picker.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+                updatePreview();
+            });
+            const customInput = document.getElementById('customColorInput');
+            if (customInput) {
+                customInput.addEventListener('input', function(){
+                    hiddenColor.value = this.value;
+                    picker.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+                    customInput.parentElement.classList.add('active');
+                    updatePreview();
+                });
+            }
+            const initial = hiddenColor.value || '#111111';
+            const initialBtn = picker.querySelector(`.color-option[data-color="${initial}"]`);
+            if (initialBtn) initialBtn.classList.add('active'); else customInput && customInput.parentElement.classList.add('active');
             updatePreview();
         });
     </script>

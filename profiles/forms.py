@@ -5,8 +5,8 @@ from .models import Profile, ProfileWidget
 from django.core.validators import EmailValidator
 from django.core.exceptions import ValidationError
 
-MAX_AVATAR_MB = 5
-MAX_BACKGROUND_MB = 8
+MAX_AVATAR_MB = 1
+MAX_BACKGROUND_MB = 1
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, help_text='Обязательное поле')
@@ -107,6 +107,7 @@ class ProfileForm(forms.ModelForm):
             self.fields['website'].widget.attrs.update({'class': 'form-control'})
         # Обновим подсказки по изображениям с учетом ограничений
         if 'avatar' in self.fields:
+            self.fields['avatar'].label = 'АВАТАР'
             self.fields['avatar'].help_text = f"Рекомендуемый размер 100x100, до {MAX_AVATAR_MB} МБ"
         if 'background' in self.fields:
             self.fields['background'].help_text = f"Рекомендуемый размер 530x200, до {MAX_BACKGROUND_MB} МБ"
@@ -205,9 +206,22 @@ class ProfileWidgetForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Русские ярлыки
         self.fields['title'].label = 'Название'
-        self.fields['content'].label = 'Содержимое/URL'
+        self.fields['content'].label = 'Содержимое'
         self.fields['icon'].label = 'Иконка (Font Awesome)'
-        self.fields['color'].label = 'Цвет'
+        self.fields['color'].label = 'Цвет кнопки'
         self.fields['is_active'].label = 'Активен'
         self.fields['order'].label = 'Порядок'
+
+        # Placeholder'ы как на макете
+        self.fields['title'].widget.attrs.update({'placeholder': 'Ваша кнопка'})
+        self.fields['content'].widget.attrs.update({'placeholder': 'Введите содержимое'})
+
+        # Значения по умолчанию для кастомной кнопки (если форма не связана с существующей записью)
+        if not self.is_bound and not getattr(self.instance, 'pk', None):
+            self.initial.setdefault('widget_type', 'button')
+            self.initial.setdefault('title', 'Ваша кнопка')
+            self.initial.setdefault('icon', 'fas fa-cog')
+            self.initial.setdefault('color', '#111111')
+            self.initial.setdefault('is_active', True)

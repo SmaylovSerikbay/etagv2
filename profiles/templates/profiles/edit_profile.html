@@ -62,15 +62,15 @@
                             <label for="{{ form.avatar.id_for_label }}">{{ form.avatar.label }}</label>
                             <div class="image-input">
                                 <div class="image-row">
-                                    <div class="image-thumb">
+                                    <div class="image-thumb" id="avatar-thumb">
                                         {% if user.profile.avatar %}
-                                            <img src="{{ user.profile.avatar.url }}" alt="Avatar" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;">
+                                            <img id="avatar-preview" src="{{ user.profile.avatar.url }}" alt="Avatar" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;">
                                         {% else %}
-                                            <div style="width:72px;height:72px;border-radius:12px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
+                                            <div class="avatar-placeholder" style="width:72px;height:72px;border-radius:12px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
                                         {% endif %}
                                     </div>
                                     <div class="image-meta">
-                                        <div class="file-name" id="avatar-file-name">
+                                        <div class="file-name" id="avatar-file-name" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">
                                             {% if user.profile.avatar %}{{ user.profile.avatar.name }}{% else %}Файл не выбран{% endif %}
                                         </div>
                                         <div class="image-actions">
@@ -79,9 +79,9 @@
                                             <button type="button" class="btn btn-danger" onclick="toggleClear('avatar')">Очистить</button>
                                             {% endif %}
                                         </div>
-                                        <small class="help-text">Рекомендуемый размер 100x100</small>
+                                        <small class="help-text">{{ form.avatar.help_text }}</small>
                                     </div>
-                                </div>
+                </div>
                                 <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
                                     {{ form.avatar }}
                                 </div>
@@ -95,15 +95,15 @@
                             <label for="{{ form.background.id_for_label }}">{{ form.background.label }}</label>
                             <div class="image-input">
                                 <div class="image-row">
-                                    <div class="image-thumb">
+                                    <div class="image-thumb" id="background-thumb">
                                         {% if user.profile.background %}
-                                            <img src="{{ user.profile.background.url }}" alt="Background" style="width:132px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">
+                                            <img id="background-preview" src="{{ user.profile.background.url }}" alt="Background" style="width:132px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;cursor:pointer;">
                                         {% else %}
-                                            <div style="width:132px;height:50px;border-radius:8px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
+                                            <div class="background-placeholder" style="width:132px;height:50px;border-radius:8px;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;">—</div>
                                         {% endif %}
                                     </div>
                                     <div class="image-meta">
-                                        <div class="file-name" id="background-file-name">
+                                        <div class="file-name" id="background-file-name" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">
                                             {% if user.profile.background %}{{ user.profile.background.name }}{% else %}Файл не выбран{% endif %}
                                         </div>
                                         <div class="image-actions">
@@ -112,9 +112,9 @@
                                             <button type="button" class="btn btn-danger" onclick="toggleClear('background')">Очистить</button>
                                             {% endif %}
                                         </div>
-                                        <small class="help-text">Рекомендуемый размер 530x200</small>
+                                        <small class="help-text">{{ form.background.help_text }}</small>
                                     </div>
-                                </div>
+                </div>
                                 <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
                                     {{ form.background }}
                                 </div>
@@ -162,8 +162,21 @@
             </form>
         </div>
     </div>
-</body>
+
+<div id="imagePreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;">
+    <div style="background:#111;border-radius:12px;max-width:90vw;max-height:90vh;padding:8px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:flex-end;">
+            <button type="button" id="imagePreviewClose" class="btn btn-outline" style="padding:6px 10px;">Закрыть</button>
+        </div>
+        <img id="imagePreviewLarge" src="" alt="preview" style="max-width:86vw;max-height:80vh;object-fit:contain;border-radius:8px;background:#000;">
+    </div>
+    </div>
+
 <script>
+    const MAX_AVATAR_MB = 1;
+    const MAX_BACKGROUND_MB = 1;
+    function formatMB(bytes){ return (bytes/1024/1024).toFixed(2); }
+
     function toggleClear(field) {
         const clearCheckbox = document.querySelector(`input[type=checkbox][name=${field}-clear]`);
         if (clearCheckbox) {
@@ -175,11 +188,48 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Click-to-preview
+        const modal = document.getElementById('imagePreviewModal');
+        const modalImg = document.getElementById('imagePreviewLarge');
+        const modalClose = document.getElementById('imagePreviewClose');
+        function openPreview(src){ if(!src) return; modalImg.src = src; modal.style.display = 'flex'; document.body.style.overflow='hidden'; }
+        function closePreview(){ modal.style.display = 'none'; modalImg.src=''; document.body.style.overflow=''; }
+        if (modalClose) modalClose.addEventListener('click', closePreview);
+        if (modal) modal.addEventListener('click', function(e){ if(e.target === modal){ closePreview(); } });
+        const avatarPrev = document.getElementById('avatar-preview');
+        if (avatarPrev) avatarPrev.addEventListener('click', function(){ openPreview(this.src); });
+        const bgPrev = document.getElementById('background-preview');
+        if (bgPrev) bgPrev.addEventListener('click', function(){ openPreview(this.src); });
+
         const avatarInput = document.querySelector('input[type=file][name=avatar]');
         const avatarName = document.getElementById('avatar-file-name');
         if (avatarInput && avatarName) {
             avatarInput.addEventListener('change', function() {
-                avatarName.textContent = this.files && this.files[0] ? this.files[0].name : 'Файл не выбран';
+                const file = this.files && this.files[0];
+                if (file) {
+                    if (file.size > MAX_AVATAR_MB*1024*1024) {
+                        alert(`Аватар слишком большой: ${formatMB(file.size)} МБ. Допустимо до ${MAX_AVATAR_MB} МБ.`);
+                        this.value = '';
+                        avatarName.textContent = 'Файл не выбран';
+                        return;
+                    }
+                    avatarName.textContent = file.name;
+                    const reader = new FileReader();
+                    reader.onload = function(e){
+                        const img = document.getElementById('avatar-preview');
+                        const holder = document.getElementById('avatar-thumb');
+                        if (img) {
+                            img.src = e.target.result;
+                        } else if (holder) {
+                            holder.innerHTML = `<img id=\"avatar-preview\" src=\"${e.target.result}\" alt=\"Avatar\" style=\"width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;\">`;
+                            const created = document.getElementById('avatar-preview');
+                            if (created) created.addEventListener('click', function(){ openPreview(this.src); });
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    avatarName.textContent = 'Файл не выбран';
+                }
                 const clearCheckbox = document.querySelector('input[type=checkbox][name=avatar-clear]');
                 if (clearCheckbox) clearCheckbox.checked = false;
             });
@@ -189,7 +239,31 @@
         const bgName = document.getElementById('background-file-name');
         if (bgInput && bgName) {
             bgInput.addEventListener('change', function() {
-                bgName.textContent = this.files && this.files[0] ? this.files[0].name : 'Файл не выбран';
+                const file = this.files && this.files[0];
+                if (file) {
+                    if (file.size > MAX_BACKGROUND_MB*1024*1024) {
+                        alert(`Фон слишком большой: ${formatMB(file.size)} МБ. Допустимо до ${MAX_BACKGROUND_MB} МБ.`);
+                        this.value = '';
+                        bgName.textContent = 'Файл не выбран';
+                        return;
+                    }
+                    bgName.textContent = file.name;
+                    const reader = new FileReader();
+                    reader.onload = function(e){
+                        const img = document.getElementById('background-preview');
+                        const holder = document.getElementById('background-thumb');
+                        if (img) {
+                            img.src = e.target.result;
+                        } else if (holder) {
+                            holder.innerHTML = `<img id=\"background-preview\" src=\"${e.target.result}\" alt=\"Background\" style=\"width:132px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;cursor:pointer;\">`;
+                            const created = document.getElementById('background-preview');
+                            if (created) created.addEventListener('click', function(){ openPreview(this.src); });
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    bgName.textContent = 'Файл не выбран';
+                }
                 const clearCheckbox = document.querySelector('input[type=checkbox][name=background-clear]');
                 if (clearCheckbox) clearCheckbox.checked = false;
             });

@@ -244,7 +244,7 @@ def widget_create(request):
     return render(request, 'profiles/widget_form.html', {
         'form': form,
         'profile': profile,
-        'title': 'Добавить виджет'
+        'title': 'Добавить кнопку'
     })
 
 
@@ -947,12 +947,12 @@ def _get_button_and_widget_templates():
         },
         {
             'id': 'location',
-            'title': 'Местоположение',
+            'title': 'Карта',
             'icon': 'fas fa-map-marker-alt',
             'color': '#EF4444',
-            'widget_type': 'button',
-            'content_placeholder': 'Введите адрес или координаты',
-            'description': 'Показать местоположение на карте'
+            'widget_type': 'link',
+            'content_placeholder': 'Введите ссылку на карту',
+            'description': 'Открыть местоположение на карте'
         },
         {
             'id': 'calendar',
