@@ -549,6 +549,8 @@ p  { color: var(--gray-700); font-size: 16px; }
     transition: transform 0.2s ease, filter 0.2s ease;
     min-height: 60px;
     position: relative;
+    overflow: visible; /* не обрезать выпадающее меню */
+    z-index: 1; /* базовый слой над соседями */
     cursor: default;
 }
 
@@ -646,7 +648,7 @@ p  { color: var(--gray-700); font-size: 16px; }
     border-radius: 10px;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
-    z-index: 9999;
+    z-index: 100000; /* поверх соседних карточек и контейнеров */
 }
 
 .card-dropdown.show { display: block; }
@@ -659,7 +661,7 @@ p  { color: var(--gray-700); font-size: 16px; }
 
 .social-card.menu-open {
     position: relative;
-    z-index: 9999;
+    z-index: 10000; /* поднять карточку над соседями */
     overflow: visible;
     transform: none; /* avoid new stacking context from hover transform */
 }
