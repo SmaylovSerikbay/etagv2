@@ -679,7 +679,8 @@
             const portalState = { current: null };
 
             function closeAnyDropdown() {
-                container.querySelectorAll('.card-dropdown.show').forEach(dd => {
+                // ищем в документе, т.к. активный дропдаун вынесен в body
+                document.querySelectorAll('.card-dropdown.show').forEach(dd => {
                     dd.classList.remove('show');
                     dd.classList.remove('portal');
                     dd.style.top = '';
@@ -817,13 +818,12 @@
             }, true);
 
             // Закрытие меню по клику вне
-            document.addEventListener('click', function(e) {
-                const clickedInsideMenu = e.target.closest('.card-dropdown');
-                const clickedButton = e.target.closest('.card-menu-btn');
-                if (!clickedInsideMenu && !clickedButton) {
-                    closeAnyDropdown();
-                }
-            }, true);
+            // Всегда закрывать при любом взаимодействии (click/touch/pointer), плюс Escape
+            const globalClose = () => closeAnyDropdown();
+            document.addEventListener('click', globalClose, true);
+            document.addEventListener('touchstart', globalClose, true);
+            document.addEventListener('pointerdown', globalClose, true);
+            document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeAnyDropdown(); } }, true);
 
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('.social-card:not(.dragging)')];
