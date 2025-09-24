@@ -675,26 +675,80 @@
             });
 
             // Контекстное меню карточек (три точки)
+            // Реализация с переносом dropdown в портал (fixed к body) для стабильности на iOS
+            const portalState = { current: null };
+
+            function closeAnyDropdown() {
+                container.querySelectorAll('.card-dropdown.show').forEach(dd => {
+                    dd.classList.remove('show');
+                    dd.classList.remove('portal');
+                    dd.style.top = '';
+                    dd.style.left = '';
+                    dd.style.bottom = '';
+                    dd.style.right = '';
+                    dd.style.width = '';
+                    // вернуть в исходного владельца
+                    if (dd._owner && dd._owner.contains(dd) === false) {
+                        dd._owner.appendChild(dd);
+                    }
+                });
+                // сброс признака открытой карточки
+                container.querySelectorAll('.social-card.menu-open').forEach(card => card.classList.remove('menu-open'));
+                // сброс обработчиков прокрутки/масштаба
+                if (portalState.current) {
+                    window.removeEventListener('scroll', updatePortalPosition, true);
+                    window.removeEventListener('resize', updatePortalPosition, true);
+                    portalState.current = null;
+                }
+            }
+
+            function updatePortalPosition() {
+                if (!portalState.current) return;
+                const { btn, dd } = portalState.current;
+                const rect = btn.getBoundingClientRect();
+                const viewportWidth = document.documentElement.clientWidth;
+                const dropdownWidth = Math.max(180, Math.min(260, rect.width + 120));
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const openUp = spaceBelow < 200; // мало места снизу – открыть вверх
+
+                dd.classList.toggle('flip-up', openUp);
+                dd.style.width = dropdownWidth + 'px';
+                if (openUp) {
+                    dd.style.top = (rect.top - 12) + 'px';
+                } else {
+                    dd.style.top = (rect.bottom + 12) + 'px';
+                }
+                // выравниваем вправо относительно кнопки, не выходя за экран
+                const desiredLeft = Math.min(rect.right - dropdownWidth, viewportWidth - dropdownWidth - 8);
+                dd.style.left = Math.max(8, desiredLeft) + 'px';
+            }
+
             container.addEventListener('click', function(e) {
                 const menuBtn = e.target.closest('.card-menu-btn');
                 if (menuBtn) {
                     e.preventDefault();
                     e.stopPropagation();
                     // закрыть другие
-                    container.querySelectorAll('.card-dropdown.show').forEach(dd => {
-                        if (!menuBtn.nextElementSibling || dd !== menuBtn.nextElementSibling) dd.classList.remove('show');
-                    });
-                    const dropdown = menuBtn.parentElement.querySelector('.card-dropdown');
+                    closeAnyDropdown();
+                    const dropdown = menuBtn._dropdownRef || menuBtn.parentElement.querySelector('.card-dropdown');
                     if (dropdown) {
                         const card = menuBtn.closest('.social-card');
                         const willShow = !dropdown.classList.contains('show');
-                        dropdown.classList.toggle('show');
                         if (willShow) {
-                            // Решаем, где показать: вниз или вверх
-                            // вычислим положение относительно окна
-                            const buttonRect = menuBtn.getBoundingClientRect();
-                            const availableBelow = window.innerHeight - buttonRect.bottom;
-                            dropdown.classList.toggle('flip-up', availableBelow < 180);
+                            // Перенос в портал и позиционирование fixed
+                            dropdown.classList.add('portal');
+                            dropdown.classList.add('show');
+                            dropdown._owner = dropdown._owner || dropdown.parentElement;
+                            document.body.appendChild(dropdown);
+                            menuBtn._dropdownRef = dropdown;
+                            portalState.current = { btn: menuBtn, dd: dropdown };
+                            updatePortalPosition();
+                            window.addEventListener('scroll', updatePortalPosition, true);
+                            window.addEventListener('resize', updatePortalPosition, true);
+                        } else {
+                            dropdown.classList.remove('show');
+                            dropdown.classList.remove('portal');
+                            if (dropdown._owner) dropdown._owner.appendChild(dropdown);
                         }
                         if (card) card.classList.toggle('menu-open', willShow);
                     }
@@ -709,8 +763,7 @@
                     const card = actionBtn.closest('.social-card');
                     if (!card) return;
                     // закрыть меню
-                    const dd = actionBtn.closest('.card-dropdown');
-                    if (dd) dd.classList.remove('show');
+                    closeAnyDropdown();
 
                     if (action === 'edit') {
                         const widgetId = card.dataset.widgetId;
@@ -755,12 +808,12 @@
             });
 
             // Закрытие меню по клику вне
-            document.addEventListener('click', function() {
-                container.querySelectorAll('.card-dropdown.show').forEach(dd => {
-                    dd.classList.remove('show');
-                    const card = dd.closest('.social-card');
-                    if (card) card.classList.remove('menu-open');
-                });
+            document.addEventListener('click', function(e) {
+                const clickedInsideMenu = e.target.closest('.card-dropdown');
+                const clickedButton = e.target.closest('.card-menu-btn');
+                if (!clickedInsideMenu && !clickedButton) {
+                    closeAnyDropdown();
+                }
             });
 
             function getDragAfterElement(container, y) {

@@ -659,6 +659,16 @@ p  { color: var(--gray-700); font-size: 16px; }
     bottom: 38px;
 }
 
+/* Портал: когда меню отцеплено и закреплено к body (исправление iOS Safari) */
+.card-dropdown.portal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    bottom: auto;
+    transform: translate3d(0,0,0); /* триггер композитинга для плавности на iOS */
+}
+
 .social-card.menu-open {
     position: relative;
     z-index: 10000; /* поднять карточку над соседями */
