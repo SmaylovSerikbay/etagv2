@@ -225,3 +225,49 @@ class ProfileWidgetForm(forms.ModelForm):
             self.initial.setdefault('icon', 'fas fa-cog')
             self.initial.setdefault('color', '#111111')
             self.initial.setdefault('is_active', True)
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content', '').strip()
+        widget_type = self.cleaned_data.get('widget_type', 'button')
+        
+        if not content:
+            raise forms.ValidationError('Содержимое не может быть пустым')
+        
+        # Валидация в зависимости от типа виджета
+        if widget_type == 'contact':
+            # Для контактов принимаем телефоны, email, адреса
+            if content.startswith(('tel:', 'mailto:', 'sms:')):
+                return content
+            # Если не протокол, проверяем что это может быть телефон или email
+            if '@' in content or content.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+                return content
+            raise forms.ValidationError('Для контакта укажите телефон, email или адрес')
+        
+        elif widget_type == 'social':
+            # Для соцсетей принимаем username, ссылки, номера
+            if content.startswith(('http://', 'https://', '@')):
+                return content
+            # Username без @ тоже принимаем
+            if content.replace('_', '').replace('.', '').isalnum():
+                return content
+            # Номера телефонов для WhatsApp
+            if content.replace('+', '').replace('-', '').replace(' ', '').isdigit():
+                return content
+            raise forms.ValidationError('Для социальной сети укажите username, ссылку или номер телефона')
+        
+        elif widget_type == 'link':
+            # Для ссылок принимаем URL или текст
+            if content.startswith(('http://', 'https://', 'tel:', 'mailto:', 'sms:')):
+                return content
+            # Если не URL, принимаем как есть (может быть обработан в view)
+            return content
+        
+        elif widget_type == 'button':
+            # Для кнопок принимаем все - URL, текст, номера, email
+            return content
+        
+        elif widget_type == 'text':
+            # Для текста принимаем любой текст
+            return content
+        
+        return content
