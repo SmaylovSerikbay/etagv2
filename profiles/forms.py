@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from .models import Profile, ProfileWidget
 from django.core.validators import EmailValidator
 from django.core.exceptions import ValidationError
+from .widget_utils import get_storage_content
 
 MAX_AVATAR_MB = 1
 MAX_BACKGROUND_MB = 1

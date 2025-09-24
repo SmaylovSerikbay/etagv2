@@ -7,6 +7,7 @@ from django.contrib import messages
 from .models import Profile, NfcCard, ProfileWidget
 from django.utils import timezone
 from .forms import SignUpForm, ProfileForm, CustomAuthenticationForm, ProfileWidgetForm
+from .widget_utils import get_display_content, get_storage_content
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.db import transaction
@@ -14,6 +15,45 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
+
+def _guess_template_id_by_title_icon(title: str, icon: str) -> str:
+    """Возвращает подсказку template_id по названию/иконке для нормализации содержимого.
+    Нужна для кастомных кнопок, когда пользователь выбирает тип сам и мы хотим
+    собрать правильные ссылки (wa.me, t.me и т.д.)."""
+    t = (title or '').lower()
+    i = (icon or '').lower()
+    pairs = [
+        ('whatsapp', 'whatsapp'),
+        ('telegram', 'telegram'),
+        ('instagram', 'instagram'),
+        ('youtube', 'youtube'),
+        ('tiktok', 'tiktok'),
+        ('facebook', 'facebook'),
+        ('linkedin', 'linkedin'),
+        ('twitter', 'twitter'),
+        ('x ', 'twitter'),
+        ('vk', 'vk'),
+        ('ok', 'ok'),
+        ('snapchat', 'snapchat'),
+        ('pinterest', 'pinterest'),
+        ('behance', 'behance'),
+        ('500px', 'fivehundredpx'),
+        ('twitch', 'twitch'),
+        ('discord', 'discord'),
+        ('steam', 'steam'),
+        ('spotify', 'spotify'),
+        ('apple', 'apple_music'),
+        ('soundcloud', 'soundcloud'),
+        ('yandex музыка', 'yandex_music'),
+        ('vk музыка', 'vk_music'),
+        ('boom', 'boom'),
+        ('sber звук', 'sber_sound'),
+        ('youtube музыка', 'youtube_music'),
+    ]
+    for needle, tpl in pairs:
+        if needle in t or needle in i:
+            return tpl
+    return ''
 
 def welcome(request):
     if request.user.is_authenticated:
@@ -235,6 +275,9 @@ def widget_create(request):
         if form.is_valid():
             widget = form.save(commit=False)
             widget.profile = profile
+            # Преобразуем содержимое для хранения (учитываем подсказку по названию/иконке)
+            tpl_hint = _guess_template_id_by_title_icon(widget.title, widget.icon)
+            widget.content = get_storage_content(widget.content, widget.widget_type, tpl_hint)
             widget.save()
             messages.success(request, 'Виджет успешно создан!')
             return redirect('profiles:profile_detail', hash=profile.hash)
@@ -260,17 +303,28 @@ def widget_edit(request, widget_id):
         color = request.POST.get('color', widget.color)
         icon = request.POST.get('icon', widget.icon)
 
+        # Преобразуем содержимое для хранения (учитываем подсказку по названию/иконке)
+        tpl_hint = _guess_template_id_by_title_icon(title, icon)
+        storage_content = get_storage_content(content, widget.widget_type, tpl_hint)
+        
         widget.title = title
-        widget.content = content
+        widget.content = storage_content
         widget.color = color
         widget.icon = icon
         widget.save()
         messages.success(request, 'Виджет успешно обновлен!')
         return redirect('profiles:profile_detail', hash=profile.hash)
 
+    # Преобразуем содержимое для отображения в форме
+    display_content = get_display_content(widget.content, widget.widget_type)
+    
+    # Создаем копию виджета с красивым содержимым для отображения
+    widget_display = widget
+    widget_display.content = display_content
+
     return render(request, 'profiles/widget_edit_form.html', {
         'profile': profile,
-        'widget': widget
+        'widget': widget_display
     })
 
 
@@ -340,7 +394,7 @@ def _get_button_and_widget_templates():
     button_templates = [
         {
             'id': 'phone',
-            'title': 'Номер телефона',
+            'title': 'Позвонить',
             'icon': 'fas fa-phone',
             'color': '#111111',
             'widget_type': 'contact',
@@ -1029,26 +1083,8 @@ def widget_create_from_template(request, template_id):
         widget_type = request.POST.get('widget_type')
         
         if title and content:
-            # Обрабатываем содержимое в зависимости от типа виджета
-            if widget_type == 'social':
-                if 'whatsapp' in template_id and not content.startswith('https://'):
-                    content = f"https://wa.me/{content.replace('+', '').replace(' ', '')}"
-                elif 'telegram' in template_id and not content.startswith('https://'):
-                    content = f"https://t.me/{content.replace('@', '')}"
-                elif 'instagram' in template_id and not content.startswith('https://'):
-                    content = f"https://instagram.com/{content.replace('@', '')}"
-                elif 'youtube' in template_id and not content.startswith('https://'):
-                    content = f"https://youtube.com/@{content.replace('@', '')}"
-                elif 'tiktok' in template_id and not content.startswith('https://'):
-                    content = f"https://tiktok.com/@{content.replace('@', '')}"
-            elif widget_type == 'contact':
-                if 'phone' in template_id and not content.startswith('tel:'):
-                    content = f"tel:{content.replace('+', '').replace(' ', '')}"
-            elif widget_type == 'button':
-                if 'sms' in template_id and not content.startswith('sms:'):
-                    content = f"sms:{content.replace('+', '').replace(' ', '')}"
-                elif 'location' in template_id and not content.startswith('https://'):
-                    content = f"https://maps.google.com/?q={content}"
+            # Используем утилиту для преобразования содержимого
+            content = get_storage_content(content, widget_type, template_id)
             
             # Создаем виджет
             widget = ProfileWidget.objects.create(
