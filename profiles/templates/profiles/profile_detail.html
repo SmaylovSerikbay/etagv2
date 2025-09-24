@@ -754,58 +754,67 @@
                     }
                     return;
                 }
+            });
 
+            // Обработка кликов по пунктам меню на уровне документа (меню вынесено в body)
+            document.addEventListener('click', function(e) {
                 const actionBtn = e.target.closest('.card-action');
-                if (actionBtn) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const action = actionBtn.dataset.action;
-                    const card = actionBtn.closest('.social-card');
-                    if (!card) return;
-                    // закрыть меню
-                    closeAnyDropdown();
+                if (!actionBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
 
-                    if (action === 'edit') {
-                        const widgetId = card.dataset.widgetId;
-                        if (widgetId) {
-                            window.location.href = '{% url "profiles:widget_edit" 0 %}'.replace('/0/', `/${widgetId}/`);
-                        }
-                        return;
-                    } else if (action === 'duplicate') {
-                        const widgetId = card.dataset.widgetId;
-                        if (widgetId) {
-                            fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
-                                method: 'POST',
-                                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-                            }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
-                        }
-                    } else if (action === 'hide') {
-                        const widgetId = card.dataset.widgetId;
-                        if (!widgetId) return;
-                        const isInactive = card.classList.contains('inactive');
-                        const url = isInactive
-                            ? '{% url "profiles:widget_show_api" 0 %}'.replace('/0/', `/${widgetId}/`)
-                            : '{% url "profiles:widget_hide_api" 0 %}'.replace('/0/', `/${widgetId}/`);
-                        fetch(url, {
+                const dd = actionBtn.closest('.card-dropdown');
+                // исходная карточка хранится в dd._owner
+                let card = actionBtn.closest('.social-card');
+                if (!card && dd && dd._owner) {
+                    card = dd._owner.closest('.social-card');
+                }
+                const action = actionBtn.dataset.action;
+                if (!card) { closeAnyDropdown(); return; }
+
+                // закрыть меню сразу, чтобы ощущалось отзывчиво
+                closeAnyDropdown();
+
+                if (action === 'edit') {
+                    const widgetId = card.dataset.widgetId;
+                    if (widgetId) {
+                        window.location.href = '{% url "profiles:widget_edit" 0 %}'.replace('/0/', `/${widgetId}/`);
+                    }
+                    return;
+                } else if (action === 'duplicate') {
+                    const widgetId = card.dataset.widgetId;
+                    if (widgetId) {
+                        fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
                             method: 'POST',
                             headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
                         }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
-                    } else if (action === 'delete') {
-                        const widgetId = card.dataset.widgetId;
-                        if (confirm('Удалить этот контакт?')) {
-                            if (widgetId) {
-                                fetch('{% url "profiles:widget_delete_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
-                                    method: 'POST',
-                                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-                                }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
-                            } else {
-                                card.remove();
-                                saveContactOrder();
-                            }
+                    }
+                } else if (action === 'hide') {
+                    const widgetId = card.dataset.widgetId;
+                    if (!widgetId) return;
+                    const isInactive = card.classList.contains('inactive');
+                    const url = isInactive
+                        ? '{% url "profiles:widget_show_api" 0 %}'.replace('/0/', `/${widgetId}/`)
+                        : '{% url "profiles:widget_hide_api" 0 %}'.replace('/0/', `/${widgetId}/`);
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                    }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                } else if (action === 'delete') {
+                    const widgetId = card.dataset.widgetId;
+                    if (confirm('Удалить этот контакт?')) {
+                        if (widgetId) {
+                            fetch('{% url "profiles:widget_delete_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                            }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                        } else {
+                            card.remove();
+                            saveContactOrder();
                         }
                     }
                 }
-            });
+            }, true);
 
             // Закрытие меню по клику вне
             document.addEventListener('click', function(e) {
@@ -814,7 +823,7 @@
                 if (!clickedInsideMenu && !clickedButton) {
                     closeAnyDropdown();
                 }
-            });
+            }, true);
 
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('.social-card:not(.dragging)')];
