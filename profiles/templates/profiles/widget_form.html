@@ -45,7 +45,7 @@
                 {% if form.content.errors %}
                     <div class="error">{{ form.content.errors.0 }}</div>
                 {% endif %}
-                <div class="help-text">Введите содержимое</div>
+                <div class="help-text" id="content-help">Введите содержимое</div>
             </div>
 
             <div class="form-group">
@@ -69,7 +69,10 @@
                 <div class="help-text">Выберите один из цветов или задайте свой</div>
             </div>
 
-            {{ form.widget_type.as_hidden }}
+            <div class="form-group" style="display: none;">
+                <label for="{{ form.widget_type.id_for_label }}">{{ form.widget_type.label }}</label>
+                {{ form.widget_type }}
+            </div>
             {{ form.icon.as_hidden }}
             {{ form.is_active.as_hidden }}
             {{ form.order.as_hidden }}
@@ -118,6 +121,31 @@
         }
 
         // Добавляем обработчики событий
+        function updateContentHelp() {
+            const widgetType = document.getElementById('id_widget_type').value;
+            const helpText = document.getElementById('content-help');
+            const contentField = document.getElementById('id_content');
+            
+            const helpTexts = {
+                'button': 'Введите содержимое (URL, текст, номер телефона, email)',
+                'link': 'Введите ссылку или текст',
+                'contact': 'Введите телефон, email или адрес',
+                'social': 'Введите username, ссылку или номер телефона',
+                'text': 'Введите текст для отображения'
+            };
+            
+            const placeholders = {
+                'button': 'Введите содержимое',
+                'link': 'https://example.com',
+                'contact': '+7 (999) 123-45-67',
+                'social': '@username или ссылка',
+                'text': 'Ваш текст'
+            };
+            
+            helpText.textContent = helpTexts[widgetType] || 'Введите содержимое';
+            contentField.placeholder = placeholders[widgetType] || 'Введите содержимое';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = ['id_title', 'id_content', 'id_icon'];
             inputs.forEach(id => {
@@ -127,6 +155,14 @@
                     element.addEventListener('change', updatePreview);
                 }
             });
+            
+            // Обновляем подсказки при смене типа виджета
+            const widgetTypeField = document.getElementById('id_widget_type');
+            if (widgetTypeField) {
+                widgetTypeField.addEventListener('change', updateContentHelp);
+                updateContentHelp();
+            }
+            
             // Цветоподбор как на шаблоне
             const hiddenColor = document.getElementById('id_color_hidden');
             const picker = document.getElementById('colorPicker');
