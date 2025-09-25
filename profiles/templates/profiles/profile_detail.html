@@ -355,7 +355,7 @@
                     <!-- Пользовательские виджеты в том же стиле -->
                     {% for widget in profile.widgets.all %}
                         {% if widget.is_active or is_owner %}
-                            <div class="social-card {% if not widget.is_active %}inactive{% endif %}" data-type="widget" data-widget-id="{{ widget.id }}" style="{% if widget.is_active %}background-color: {{ widget.color }};{% else %}background-color: #D9D9D9;{% endif %}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                            <div class="social-card {% if not widget.is_active %}inactive{% endif %}" data-type="widget" data-widget-id="{{ widget.id }}" data-original-color="{{ widget.color }}" style="{% if widget.is_active %}background-color: {{ widget.color }};{% else %}background-color: #D9D9D9;{% endif %}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
                                 {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
                                 {% if is_owner %}
                                 <div class="card-menu">
@@ -374,22 +374,22 @@
                                 {% endif %}
                                 {% if widget.widget_type == 'button' or widget.widget_type == 'link' %}
                                     <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
-                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </a>
                                 {% elif widget.widget_type == 'social' %}
                                     <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
-                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </a>
                                 {% elif widget.widget_type == 'contact' %}
                                     <a href="{{ widget.content }}" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
-                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </a>
                                 {% else %}
                                     <div class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
-                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}"></i>
+                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </div>
                                 {% endif %}
@@ -645,6 +645,68 @@
                 }
             });
 
+            // Дополнительная поддержка для iOS - обработка touch событий для drag
+            let touchStartY = 0;
+            let touchStartX = 0;
+            let touchStartTime = 0;
+            let isDragging = false;
+            let dragStartTriggered = false;
+
+            container.addEventListener('touchstart', function(e) {
+                const targetCard = e.target.closest('.social-card');
+                if (targetCard) {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartX = e.touches[0].clientX;
+                    touchStartTime = Date.now();
+                    isDragging = false;
+                    dragStartTriggered = false;
+                    // Если начинается удержание на кнопке меню — не открывать меню, а готовить drag
+                    if (e.target.closest('.card-menu-btn')) {
+                        e.preventDefault();
+                    }
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', function(e) {
+                const targetCard = e.target.closest('.social-card');
+                if (targetCard && !dragStartTriggered) {
+                    const touchY = e.touches[0].clientY;
+                    const touchX = e.touches[0].clientX;
+                    const touchDuration = Date.now() - touchStartTime;
+                    const touchDistanceY = Math.abs(touchY - touchStartY);
+                    const touchDistanceX = Math.abs(touchX - touchStartX);
+                    const totalDistance = Math.sqrt(touchDistanceX * touchDistanceX + touchDistanceY * touchDistanceY);
+                    
+                    // Если удержание больше 300мс и движение больше 15px - начинаем drag
+                    if (touchDuration > 300 && totalDistance > 15) {
+                        dragStartTriggered = true;
+                        const card = targetCard;
+                        const interactive = card.querySelector('.card-menu, .card-menu-btn, .card-dropdown, a');
+                        if (!interactive || !(card.closest('.card-menu') || card.closest('.card-menu-btn') || card.closest('.card-dropdown') || card.closest('a'))) {
+                            // Принудительно запускаем drag для iOS
+                            card.style.opacity = '0.5';
+                            card.classList.add('dragging');
+                            draggedElement = card;
+                            draggedIndex = Array.from(container.children).indexOf(card);
+                            isDragging = true;
+                        }
+                    }
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchend', function(e) {
+                if (isDragging && draggedElement) {
+                    // Завершаем drag и сохраняем порядок
+                    draggedElement.style.opacity = '1';
+                    draggedElement.classList.remove('dragging');
+                    saveContactOrder();
+                    draggedElement = null;
+                    draggedIndex = null;
+                }
+                isDragging = false;
+                dragStartTriggered = false;
+            }, { passive: true });
+
             container.addEventListener('dragend', function(e) {
                 if (e.target.classList.contains('social-card')) {
                     e.target.style.opacity = '1';
@@ -665,6 +727,21 @@
                     container.insertBefore(dragging, afterElement);
                 }
             });
+
+            // Дополнительная поддержка для iOS - обработка touchmove для перетаскивания
+            container.addEventListener('touchmove', function(e) {
+                if (isDragging && draggedElement) {
+                    e.preventDefault();
+                    const touchY = e.touches[0].clientY;
+                    const afterElement = getDragAfterElement(container, touchY);
+                    
+                    if (afterElement == null) {
+                        container.appendChild(draggedElement);
+                    } else {
+                        container.insertBefore(draggedElement, afterElement);
+                    }
+                }
+            }, { passive: false });
 
             container.addEventListener('drop', function(e) {
                 e.preventDefault();
@@ -701,6 +778,8 @@
                     window.removeEventListener('resize', updatePortalPosition, true);
                     portalState.current = null;
                 }
+                // Возвращаем drag
+                container.querySelectorAll('.social-card').forEach(c=>c.setAttribute('draggable','true'));
             }
 
             function updatePortalPosition() {
@@ -746,6 +825,8 @@
                             updatePortalPosition();
                             window.addEventListener('scroll', updatePortalPosition, true);
                             window.addEventListener('resize', updatePortalPosition, true);
+                            // Блокируем drag при открытом меню
+                            container.querySelectorAll('.social-card').forEach(c=>c.setAttribute('draggable','false'));
                         } else {
                             dropdown.classList.remove('show');
                             dropdown.classList.remove('portal');
@@ -788,7 +869,33 @@
                         fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
                             method: 'POST',
                             headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-                        }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                        }).then(r=>r.json()).then(resp=>{ 
+                            if(resp && resp.success && resp.id){ 
+                                // Создаем новую карточку без перезагрузки
+                                const newCard = card.cloneNode(true);
+                                newCard.dataset.widgetId = String(resp.id);
+                                newCard.classList.remove('menu-open');
+                                const dd = newCard.querySelector('.card-dropdown');
+                                if (dd) dd.classList.remove('show');
+                                // Нормализуем иконку/ссылку согласно состоянию
+                                const link = newCard.querySelector('.social-card-link');
+                                const iconEl = newCard.querySelector('.social-card-link i');
+                                if (link) link.classList.toggle('disabled-link', newCard.classList.contains('inactive'));
+                                if (iconEl) {
+                                    if (newCard.classList.contains('inactive')) {
+                                        iconEl.className = 'fas fa-eye-slash';
+                                    } else {
+                                        const activeIcon = iconEl.getAttribute('data-active-icon');
+                                        if (activeIcon) iconEl.className = activeIcon;
+                                    }
+                                }
+                                container.appendChild(newCard);
+                                // Обновляем порядок
+                                saveContactOrder();
+                            } else {
+                                console.error('Duplicate API unexpected response', resp);
+                            }
+                        }).catch(err=>console.error('Duplicate API error', err));
                     }
                 } else if (action === 'hide') {
                     const widgetId = card.dataset.widgetId;
@@ -800,7 +907,66 @@
                     fetch(url, {
                         method: 'POST',
                         headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
-                    }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });
+                    }).then(r=>r.json()).then(resp=>{ 
+                        // Обновляем UI независимо от resp.success, но логируем ошибку
+                        const becomingInactive = !card.classList.contains('inactive');
+                        card.classList.toggle('inactive');
+                        const hideBtn = card.querySelector('[data-action="hide"]');
+                        if (hideBtn) {
+                            hideBtn.textContent = card.classList.contains('inactive') ? 'Показать' : 'Скрыть';
+                        }
+                        // Цвет
+                        if (card.classList.contains('inactive')) {
+                            card.style.backgroundColor = '#D9D9D9';
+                        } else {
+                            // Если нет originalColor (например, был неактивен при загрузке), возьмем из data-атрибута
+                            const originalColor = card.dataset.originalColor || '#10B981';
+                            card.style.backgroundColor = originalColor;
+                        }
+                        // Иконка и ссылка
+                        const link = card.querySelector('.social-card-link');
+                        const iconEl = card.querySelector('.social-card-link i');
+                        if (link) {
+                            link.classList.toggle('disabled-link', card.classList.contains('inactive'));
+                        }
+                        if (iconEl) {
+                            if (card.classList.contains('inactive')) {
+                                iconEl.className = 'fas fa-eye-slash';
+                            } else {
+                                const activeIcon = iconEl.getAttribute('data-active-icon');
+                                if (activeIcon) iconEl.className = activeIcon;
+                            }
+                        }
+                        // Если сервер ответил неуспехом — откатим визуально
+                        if (!resp.success) {
+                            console.error('Hide/Show API error:', resp);
+                            // Откат
+                            card.classList.toggle('inactive');
+                            if (hideBtn) {
+                                hideBtn.textContent = card.classList.contains('inactive') ? 'Показать' : 'Скрыть';
+                            }
+                            if (card.classList.contains('inactive')) {
+                                card.style.backgroundColor = '#D9D9D9';
+                            } else {
+                                const originalColor2 = card.dataset.originalColor || '#10B981';
+                                card.style.backgroundColor = originalColor2;
+                            }
+                            if (link) {
+                                link.classList.toggle('disabled-link', card.classList.contains('inactive'));
+                            }
+                            if (iconEl) {
+                                if (card.classList.contains('inactive')) {
+                                    iconEl.className = 'fas fa-eye-slash';
+                                } else {
+                                    const activeIcon2 = iconEl.getAttribute('data-active-icon');
+                                    if (activeIcon2) iconEl.className = activeIcon2;
+                                }
+                            }
+                        }
+                        saveContactOrder();
+                    }).catch(err=>{
+                        console.error('Hide/Show fetch error:', err);
+                    });
                 } else if (action === 'delete') {
                     const widgetId = card.dataset.widgetId;
                     if (confirm('Удалить этот контакт?')) {
