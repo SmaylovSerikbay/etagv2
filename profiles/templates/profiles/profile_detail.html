@@ -818,11 +818,14 @@
             }, true);
 
             // Закрытие меню по клику вне
-            // Всегда закрывать при любом взаимодействии (click/touch/pointer), плюс Escape
-            const globalClose = () => closeAnyDropdown();
-            document.addEventListener('click', globalClose, true);
-            document.addEventListener('touchstart', globalClose, true);
-            document.addEventListener('pointerdown', globalClose, true);
+            // Закрывать при клике вне меню, но НЕ при клике по самому меню
+            document.addEventListener('click', function(e) {
+                const clickedInsideMenu = e.target.closest('.card-dropdown');
+                const clickedButton = e.target.closest('.card-menu-btn');
+                if (!clickedInsideMenu && !clickedButton) {
+                    closeAnyDropdown();
+                }
+            }, true);
             document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeAnyDropdown(); } }, true);
 
             function getDragAfterElement(container, y) {
