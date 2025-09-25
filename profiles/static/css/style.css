@@ -520,7 +520,6 @@ p  { color: var(--gray-700); font-size: 16px; }
 .social-card-link {
     min-width: 0;
 }
-.social-card i,
 .social-card span {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -572,6 +571,9 @@ p  { color: var(--gray-700); font-size: 16px; }
     width: 24px;
     text-align: center;
 }
+
+/* Иконка не должна обрезаться на мобильных */
+.social-card-link i { flex-shrink: 0; overflow: visible; }
 
 .social-card span {
     font-size: 1rem;
@@ -628,6 +630,7 @@ p  { color: var(--gray-700); font-size: 16px; }
     cursor: pointer;
     border-radius: 999px;
     transition: transform 0.2s ease;
+    touch-action: none; /* отключаем нативный жест прокрутки при удержании на iOS */
 }
 
 .card-menu-btn i { display: inline-block; font-size: 18px; line-height: 1; }

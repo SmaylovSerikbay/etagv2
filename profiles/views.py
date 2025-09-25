@@ -412,7 +412,7 @@ def _get_button_and_widget_templates():
         },
         {
             'id': 'email',
-            'title': 'Электронная Почта',
+            'title': 'Почта',
             'icon': 'fas fa-envelope',
             'color': '#444444',
             'widget_type': 'contact',

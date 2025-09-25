@@ -326,7 +326,7 @@
                         </div>
                         <a href="mailto:{{ em }}" class="social-card-link">
                             <i class="fas fa-envelope"></i>
-                            <span>Электронная Почта</span>
+                                    <span>Почта</span>
                         </a>
                     </div>
                     {% endfor %}
@@ -660,12 +660,11 @@
                     touchStartTime = Date.now();
                     isDragging = false;
                     dragStartTriggered = false;
-                    // Если начинается удержание на кнопке меню — не открывать меню, а готовить drag
-                    if (e.target.closest('.card-menu-btn')) {
-                        e.preventDefault();
-                    }
+                    // Если удержание начинается на кнопке меню — не открывать меню, будем готовить drag
+                    // Блокируем нативный скролл, чтобы экран не "прыгал"
+                    if (e.target.closest('.card-menu-btn')) e.preventDefault();
                 }
-            }, { passive: true });
+            }, { passive: false });
 
             container.addEventListener('touchmove', function(e) {
                 const targetCard = e.target.closest('.social-card');
@@ -681,9 +680,11 @@
                     if (touchDuration > 300 && totalDistance > 15) {
                         dragStartTriggered = true;
                         const card = targetCard;
-                        const interactive = card.querySelector('.card-menu, .card-menu-btn, .card-dropdown, a');
-                        if (!interactive || !(card.closest('.card-menu') || card.closest('.card-menu-btn') || card.closest('.card-dropdown') || card.closest('a'))) {
-                            // Принудительно запускаем drag для iOS
+                        const startedOnLink = !!e.target.closest('a');
+                        const startedInDropdown = !!e.target.closest('.card-dropdown');
+                        // Разрешаем drag отовсюду, КРОМЕ ссылок и открытого dropdown
+                        if (!startedOnLink && !startedInDropdown) {
+                            e.preventDefault();
                             card.style.opacity = '0.5';
                             card.classList.add('dragging');
                             draggedElement = card;
