@@ -651,6 +651,10 @@
             let touchStartTime = 0;
             let isDragging = false;
             let dragStartTriggered = false;
+            // Long-press по кнопке меню для запуска drag без открытия меню
+            var longPressMenuTimer = null;
+            var longPressDragActive = false;
+            var suppressMenuClickUntilTs = 0;
 
             container.addEventListener('touchstart', function(e) {
                 const targetCard = e.target.closest('.social-card');
@@ -660,9 +664,14 @@
                     touchStartTime = Date.now();
                     isDragging = false;
                     dragStartTriggered = false;
-                    // Если удержание начинается на кнопке меню — не открывать меню, будем готовить drag
-                    // Блокируем нативный скролл, чтобы экран не "прыгал"
-                    if (e.target.closest('.card-menu-btn')) e.preventDefault();
+                    longPressDragActive = false;
+                    if (longPressMenuTimer) { clearTimeout(longPressMenuTimer); longPressMenuTimer = null; }
+                    if (e.target.closest('.card-menu-btn')) {
+                        longPressMenuTimer = setTimeout(function(){
+                            longPressDragActive = true;
+                            suppressMenuClickUntilTs = Date.now() + 600; // подавить клик по меню после long-press
+                        }, 350);
+                    }
                 }
             }, { passive: false });
 
@@ -676,14 +685,14 @@
                     const touchDistanceX = Math.abs(touchX - touchStartX);
                     const totalDistance = Math.sqrt(touchDistanceX * touchDistanceX + touchDistanceY * touchDistanceY);
                     
-                    // Если удержание больше 300мс и движение больше 15px - начинаем drag
-                    if (touchDuration > 300 && totalDistance > 15) {
+                    // Если удержание больше 300мс и движение больше 15px ИЛИ активирован long-press — начинаем drag
+                    if ((touchDuration > 300 && totalDistance > 15) || longPressDragActive) {
                         dragStartTriggered = true;
                         const card = targetCard;
                         const startedOnLink = !!e.target.closest('a');
                         const startedInDropdown = !!e.target.closest('.card-dropdown');
                         // Разрешаем drag отовсюду, КРОМЕ ссылок и открытого dropdown
-                        if (!startedOnLink && !startedInDropdown) {
+        		if (!startedOnLink && !startedInDropdown) {
                             e.preventDefault();
                             card.style.opacity = '0.5';
                             card.classList.add('dragging');
@@ -693,7 +702,7 @@
                         }
                     }
                 }
-            }, { passive: true });
+            }, { passive: false });
 
             container.addEventListener('touchend', function(e) {
                 if (isDragging && draggedElement) {
@@ -706,6 +715,8 @@
                 }
                 isDragging = false;
                 dragStartTriggered = false;
+                longPressDragActive = false;
+                if (longPressMenuTimer) { clearTimeout(longPressMenuTimer); longPressMenuTimer = null; }
             }, { passive: true });
 
             container.addEventListener('dragend', function(e) {
@@ -807,11 +818,23 @@
             container.addEventListener('click', function(e) {
                 const menuBtn = e.target.closest('.card-menu-btn');
                 if (menuBtn) {
+                    // Если только что запустили drag через long-press, игнорируем клик по меню
+                    if (typeof suppressMenuClickUntilTs !== 'undefined' && Date.now() < suppressMenuClickUntilTs) {
+                        return;
+                    }
                     e.preventDefault();
                     e.stopPropagation();
-                    // закрыть другие
-                    closeAnyDropdown();
+                    // получаем связанный дропдаун заранее
                     const dropdown = menuBtn._dropdownRef || menuBtn.parentElement.querySelector('.card-dropdown');
+                    // если он уже открыт — просто закрываем и выходим (toggle)
+                    if (dropdown && dropdown.classList.contains('show')) {
+                        closeAnyDropdown();
+                        const cardOpen = menuBtn.closest('.social-card');
+                        if (cardOpen) cardOpen.classList.remove('menu-open');
+                        return;
+                    }
+                    // закрыть другие и открыть этот
+                    closeAnyDropdown();
                     if (dropdown) {
                         const card = menuBtn.closest('.social-card');
                         const willShow = !dropdown.classList.contains('show');
