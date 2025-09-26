@@ -11,6 +11,59 @@ from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw, ImageOps
 from django.utils import timezone
+import os
+
+def optimize_image(image_field, max_size=(800, 600), quality=85, max_size_mb=5):
+    """
+    Быстро оптимизирует изображение до указанного размера в MB
+    """
+    if not image_field:
+        return image_field
+    
+    try:
+        # Открываем изображение
+        img = Image.open(image_field)
+        
+        # Конвертируем в RGB если нужно
+        if img.mode in ('RGBA', 'LA', 'P'):
+            # Создаем белый фон для прозрачных изображений
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Агрессивно уменьшаем размер для быстрой обработки
+        if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Быстрое сжатие с более агрессивными настройками
+        max_size_bytes = max_size_mb * 1024 * 1024
+        
+        # Начинаем с более низкого качества для быстрого результата
+        current_quality = min(quality, 0.7)  # Максимум 70% качества
+        
+        # Пробуем только 3 уровня качества для скорости
+        quality_levels = [current_quality, 0.5, 0.3]
+        
+        for q in quality_levels:
+            output = BytesIO()
+            img.save(output, format='JPEG', quality=int(q * 100), optimize=True)
+            output.seek(0)
+            
+            if output.tell() <= max_size_bytes:
+                break
+        
+        # Создаем новый файл с оптимизированным содержимым
+        optimized_file = File(output, name=image_field.name)
+        return optimized_file
+        
+    except Exception as e:
+        # Если оптимизация не удалась, возвращаем оригинальный файл
+        print(f"Ошибка оптимизации изображения: {e}")
+        return image_field
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -40,6 +93,12 @@ class Profile(models.Model):
             self.hash = uuid.uuid4().hex
         if not self.name:
             self.name = self.user.username.upper()
+        
+        # Оптимизируем изображения перед сохранением (сжимаем до 5MB)
+        if self.avatar:
+            self.avatar = optimize_image(self.avatar, max_size=(300, 300), quality=70, max_size_mb=5)
+        if self.background:
+            self.background = optimize_image(self.background, max_size=(600, 300), quality=65, max_size_mb=5)
             
         # Генерация QR кода
         if not self.qr_code:
