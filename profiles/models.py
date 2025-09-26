@@ -57,7 +57,12 @@ def optimize_image(image_field, max_size=(800, 600), quality=85, max_size_mb=5):
                 break
         
         # Создаем новый файл с оптимизированным содержимым
-        optimized_file = File(output, name=image_field.name)
+        # Во избежание вложенных путей типа avatars/avatars/... используем только базовое имя
+        # и синхронизируем расширение с форматом JPEG
+        original_name = os.path.basename(getattr(image_field, 'name', 'upload'))
+        base_name, _ = os.path.splitext(original_name)
+        safe_name = f"{base_name}.jpg"
+        optimized_file = File(output, name=safe_name)
         return optimized_file
         
     except Exception as e:
