@@ -51,9 +51,10 @@ def optimize_image(image_field, max_size=(800, 600), quality=85, max_size_mb=5):
         for q in quality_levels:
             output = BytesIO()
             img.save(output, format='JPEG', quality=int(q * 100), optimize=True)
+            # Measure actual bytes of the buffer, not the current cursor
+            size_bytes = output.getbuffer().nbytes
             output.seek(0)
-            
-            if output.tell() <= max_size_bytes:
+            if size_bytes <= max_size_bytes:
                 break
         
         # Создаем новый файл с оптимизированным содержимым
@@ -101,9 +102,20 @@ class Profile(models.Model):
         
         # Оптимизируем изображения перед сохранением (сжимаем до 5MB)
         if self.avatar:
-            self.avatar = optimize_image(self.avatar, max_size=(300, 300), quality=70, max_size_mb=5)
+            optimized = optimize_image(self.avatar, max_size=(300, 300), quality=70, max_size_mb=5)
+            if optimized:
+                # Сохраняем через FieldFile.save, чтобы корректно применился upload_to ('avatars/')
+                original_name = os.path.basename(getattr(self.avatar, 'name', 'upload'))
+                base_name, _ = os.path.splitext(original_name)
+                safe_name = f"{base_name}.jpg"
+                self.avatar.save(safe_name, optimized, save=False)
         if self.background:
-            self.background = optimize_image(self.background, max_size=(600, 300), quality=65, max_size_mb=5)
+            optimized_bg = optimize_image(self.background, max_size=(600, 300), quality=65, max_size_mb=5)
+            if optimized_bg:
+                original_bg_name = os.path.basename(getattr(self.background, 'name', 'upload'))
+                base_bg_name, _ = os.path.splitext(original_bg_name)
+                safe_bg_name = f"{base_bg_name}.jpg"
+                self.background.save(safe_bg_name, optimized_bg, save=False)
             
         # Генерация QR кода
         if not self.qr_code:
