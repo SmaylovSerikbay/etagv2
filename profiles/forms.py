@@ -6,8 +6,10 @@ from django.core.validators import EmailValidator
 from django.core.exceptions import ValidationError
 from .widget_utils import get_storage_content
 
-MAX_AVATAR_MB = 1
-MAX_BACKGROUND_MB = 1
+MAX_AVATAR_MB = 5  # Целевой размер после сжатия
+MAX_BACKGROUND_MB = 5
+# Жёсткий лимит входного файла (до сжатия), чтобы не грузить сервер чрезмерно
+HARD_MAX_UPLOAD_MB = 25
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, help_text='Обязательное поле')
@@ -109,9 +111,13 @@ class ProfileForm(forms.ModelForm):
         # Обновим подсказки по изображениям с учетом ограничений
         if 'avatar' in self.fields:
             self.fields['avatar'].label = 'АВАТАР'
-            self.fields['avatar'].help_text = f"Рекомендуемый размер 100x100, до {MAX_AVATAR_MB} МБ"
+            self.fields['avatar'].help_text = (
+                f"Рекомендуемый размер 100x100. Файлы до {HARD_MAX_UPLOAD_MB} МБ принимаются и автоматически сжимаются до {MAX_AVATAR_MB} МБ"
+            )
         if 'background' in self.fields:
-            self.fields['background'].help_text = f"Рекомендуемый размер 530x200, до {MAX_BACKGROUND_MB} МБ"
+            self.fields['background'].help_text = (
+                f"Рекомендуемый размер 530x200. Файлы до {HARD_MAX_UPLOAD_MB} МБ принимаются и автоматически сжимаются до {MAX_BACKGROUND_MB} МБ"
+            )
         # Телефоны: позволяем хранить несколько через запятую (увеличим длину, проверим поэлементно)
         if 'phone' in self.fields:
             self.fields['phone'] = forms.CharField(required=False, max_length=255)
@@ -150,10 +156,12 @@ class ProfileForm(forms.ModelForm):
     def _validate_file_size(self, f, max_mb: int, label: str):
         if not f:
             return f
-        limit = max_mb * 1024 * 1024
+        # Разрешаем файлы больше целевого лимита (они будут сжаты на сервере),
+        # но вводим жёсткий верхний предел для защиты сервера
+        hard_limit = HARD_MAX_UPLOAD_MB * 1024 * 1024
         size = getattr(f, 'size', None)
-        if size is not None and size > limit:
-            raise ValidationError(f"{label}: файл больше {max_mb} МБ")
+        if size is not None and size > hard_limit:
+            raise ValidationError(f"{label}: файл больше {HARD_MAX_UPLOAD_MB} МБ")
         return f
 
     def clean_avatar(self):
