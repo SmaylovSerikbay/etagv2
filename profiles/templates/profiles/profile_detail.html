@@ -36,7 +36,7 @@
         <!-- Шапка профиля -->
         <div class="profile-header {% if profile.background %}has-bg{% else %}no-bg{% endif %}">
             {% if profile.background %}
-                <div class="profile-background" style="background-image: url('{{ profile.background.url }}')"></div>
+                <div class="profile-background" style="background-image: url('{{ profile.background.url }}')" loading="lazy"></div>
             {% endif %}
             
             <div class="header-actions">
@@ -123,7 +123,7 @@
             <div class="profile-main-info">
                 <div class="profile-avatar" onclick="showAvatarModal()">
                     {% if profile.avatar %}
-                        <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}">
+                        <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}" loading="lazy">
                     {% else %}
                         <i class="fas fa-user"></i>
                     {% endif %}
@@ -147,7 +147,7 @@
                 <i class="fas fa-times"></i>
             </button>
             {% if profile.avatar %}
-                <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}" class="avatar-modal-image">
+                <img src="{{ profile.avatar.url }}" alt="{{ profile.name }}" class="avatar-modal-image" loading="lazy">
             {% endif %}
         </div>
 
@@ -157,7 +157,7 @@
                 <span class="close-modal">&times;</span>
                 <div class="qr-container">
                     {% if profile.qr_code %}
-                    <img src="{{ profile.qr_code.url }}" alt="QR Code" class="qr-code">
+                    <img src="{{ profile.qr_code.url }}" alt="QR Code" class="qr-code" loading="lazy">
                     <button onclick="downloadQR()" class="action-button">
                         <i class="fas fa-download"></i>
                         Скачать QR-код
@@ -345,7 +345,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        <a href="{{ wb }}" target="_blank" class="social-card-link">
+                        <a href="{{ wb }}" target="_blank" rel="noopener noreferrer" class="social-card-link">
                             <i class="fas fa-globe"></i>
                             <span>Мой Сайт</span>
                         </a>
@@ -373,12 +373,12 @@
                                 </div>
                                 {% endif %}
                                 {% if widget.widget_type == 'button' or widget.widget_type == 'link' %}
-                                    <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                    <a href="{{ widget.content }}" target="_blank" rel="noopener noreferrer" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
                                         <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </a>
                                 {% elif widget.widget_type == 'social' %}
-                                    <a href="{{ widget.content }}" target="_blank" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                    <a href="{{ widget.content }}" target="_blank" rel="noopener noreferrer" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
                                         <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
                                         <span>{{ widget.title }}</span>
                                     </a>
@@ -884,13 +884,13 @@
                 if (action === 'edit') {
                     const widgetId = card.dataset.widgetId;
                     if (widgetId) {
-                        window.location.href = '{% url "profiles:widget_edit" 0 %}'.replace('/0/', `/${widgetId}/`);
+                        window.location.href = '{% url "profiles:widget_edit" 0 %}'.replace('0', widgetId);
                     }
                     return;
                 } else if (action === 'duplicate') {
                     const widgetId = card.dataset.widgetId;
                     if (widgetId) {
-                        fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
+                        fetch('{% url "profiles:widget_duplicate_api" 0 %}'.replace('0', widgetId), {
                             method: 'POST',
                             headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
                         }).then(r=>r.json()).then(resp=>{ 
@@ -926,8 +926,8 @@
                     if (!widgetId) return;
                     const isInactive = card.classList.contains('inactive');
                     const url = isInactive
-                        ? '{% url "profiles:widget_show_api" 0 %}'.replace('/0/', `/${widgetId}/`)
-                        : '{% url "profiles:widget_hide_api" 0 %}'.replace('/0/', `/${widgetId}/`);
+                        ? '{% url "profiles:widget_show_api" 0 %}'.replace('0', widgetId)
+                        : '{% url "profiles:widget_hide_api" 0 %}'.replace('0', widgetId);
                     fetch(url, {
                         method: 'POST',
                         headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
@@ -995,7 +995,7 @@
                     const widgetId = card.dataset.widgetId;
                     if (confirm('Удалить этот контакт?')) {
                         if (widgetId) {
-                            fetch('{% url "profiles:widget_delete_api" 0 %}'.replace('/0/', `/${widgetId}/`), {
+                            fetch('{% url "profiles:widget_delete_api" 0 %}'.replace('0', widgetId), {
                                 method: 'POST',
                                 headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
                             }).then(r=>r.json()).then(resp=>{ if(resp.success){ location.reload(); } });

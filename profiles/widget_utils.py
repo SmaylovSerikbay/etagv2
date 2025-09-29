@@ -443,8 +443,24 @@ def get_storage_content(content, widget_type, template_id=None):
             return f"https://maps.google.com/?q={content}"
     
     elif widget_type == 'link':
+        if 'yandex_maps' in (template_id or ''):
+            return f"https://yandex.ru/maps/{content}"
+        elif 'google_maps' in (template_id or ''):
+            return f"https://maps.google.com/?q={content}"
+        elif 'two_gis' in (template_id or ''):
+            # Преобразуем ссылку 2ГИС в маршрут "как проехать"
+            if content.startswith('https://2gis.ru/'):
+                # Убираем домен и добавляем параметр маршрута
+                path = content.replace('https://2gis.ru/', '').replace('https://www.2gis.ru/', '')
+                return f"https://2gis.ru/{path}?m=route"
+            elif content.startswith('2gis.ru/'):
+                path = content.replace('2gis.ru/', '')
+                return f"https://2gis.ru/{path}?m=route"
+            else:
+                # Если это просто путь, добавляем маршрут
+                return f"https://2gis.ru/{content}?m=route"
         # Для обычных ссылок добавляем https:// если нет протокола
-        if not content.startswith(('http://', 'https://')):
+        elif not content.startswith(('http://', 'https://')):
             return f"https://{content}"
     
     # Общий фолбэк: если нет схемы и это похоже на email/телефон — нормализуем
