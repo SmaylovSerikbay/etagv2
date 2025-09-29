@@ -546,8 +546,8 @@ def _get_button_and_widget_templates():
             'icon': 'fas fa-map-marker-alt',
             'color': '#00B341',
             'widget_type': 'link',
-            'content_placeholder': 'Введите ссылку на 2ГИС',
-            'description': 'Открыть в 2ГИС'
+            'content_placeholder': 'Введите ссылку на место в 2ГИС',
+            'description': 'Построить маршрут в 2ГИС'
         },
         {
             'id': 'ok',
