@@ -143,6 +143,57 @@
                     </div>
                 </div>
 
+                <!-- Оформление профиля -->
+                <div class="form-section">
+                    <h2 class="section-title">Оформление профиля</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.theme_background_color.id_for_label }}">{{ form.theme_background_color.label }}</label>
+                            <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
+                                {{ form.theme_background_color }}
+                            </div>
+                            <div class="color-picker" id="bgColorPalette"></div>
+                            <small class="help-text">Выберите один из цветов или задайте свой</small>
+                            {% if form.theme_background_color.errors %}
+                            <div class="error">{{ form.theme_background_color.errors|join:", " }}</div>
+                            {% endif %}
+                            {% if form.theme_background_color.help_text %}
+                            <small class="help-text">{{ form.theme_background_color.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.theme_line_color.id_for_label }}">{{ form.theme_line_color.label }}</label>
+                            <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
+                                {{ form.theme_line_color }}
+                            </div>
+                            <div class="color-picker" id="lineColorPalette"></div>
+                            <small class="help-text">Выберите один из цветов или задайте свой</small>
+                            {% if form.theme_line_color.errors %}
+                            <div class="error">{{ form.theme_line_color.errors|join:", " }}</div>
+                            {% endif %}
+                            {% if form.theme_line_color.help_text %}
+                            <small class="help-text">{{ form.theme_line_color.help_text }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.theme_page_background_color.id_for_label }}">{{ form.theme_page_background_color.label }}</label>
+                            <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;padding:0;margin:-1px;">
+                                {{ form.theme_page_background_color }}
+                            </div>
+                            <div class="color-picker" id="pageBgColorPalette"></div>
+                            <small class="help-text">Выберите один из цветов или задайте свой</small>
+                            {% if form.theme_page_background_color.errors %}
+                            <div class="error">{{ form.theme_page_background_color.errors|join:", " }}</div>
+                            {% endif %}
+                            {% if form.theme_page_background_color.help_text %}
+                            <small class="help-text">{{ form.theme_page_background_color.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Контакты скрыты: управляются только через виджеты -->
                 <div class="form-section">
                     <h2 class="section-title">Контакты</h2>
@@ -244,6 +295,48 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        function setupPalette(inputSelector, containerId) {
+            var container = document.getElementById(containerId);
+            var input = document.querySelector(inputSelector);
+            if (!container || !input) return;
+            var presets = ['#1abc9c','#f2790f','#c77700','#f2c94c','#27ae60','#2eccb0','#3b82f6','#6c8ff5','#8b5cf6','#d946ef','#111111','#FFFFFF','custom'];
+            container.innerHTML = '';
+            presets.forEach(function(color){
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'color-option' + (color === 'custom' ? ' custom' : '');
+                if (color !== 'custom') {
+                    btn.style.setProperty('--swatch', color);
+                    btn.setAttribute('data-color', color);
+                } else {
+                    var picker = document.createElement('input');
+                    picker.type = 'color';
+                    picker.value = input.value || '#ffffff';
+                    picker.addEventListener('input', function(e){
+                        input.value = e.target.value;
+                        highlight(e.target.value);
+                    });
+                    btn.appendChild(picker);
+                }
+                btn.addEventListener('click', function(){
+                    var c = btn.getAttribute('data-color');
+                    if (c) {
+                        input.value = c;
+                        highlight(c);
+                    }
+                });
+                container.appendChild(btn);
+            });
+            function highlight(val){
+                Array.prototype.forEach.call(container.children, function(el){ el.classList.remove('active'); });
+                var match = Array.prototype.find.call(container.children, function(el){ return el.getAttribute && el.getAttribute('data-color') && el.getAttribute('data-color').toLowerCase() === String(val).toLowerCase(); });
+                if (match) match.classList.add('active');
+            }
+            highlight(input.value);
+        }
+        setupPalette('input[name=theme_background_color]', 'bgColorPalette');
+        setupPalette('input[name=theme_line_color]', 'lineColorPalette');
+        setupPalette('input[name=theme_page_background_color]', 'pageBgColorPalette');
         // Click-to-preview
         const modal = document.getElementById('imagePreviewModal');
         const modalImg = document.getElementById('imagePreviewLarge');

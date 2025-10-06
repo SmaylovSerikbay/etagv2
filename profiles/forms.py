@@ -97,6 +97,9 @@ class ProfileForm(forms.ModelForm):
         exclude = ['user', 'hash', 'is_trial']
         widgets = {
             'birthday': forms.DateInput(attrs={'type': 'date'}),
+            'theme_background_color': forms.TextInput(attrs={'type': 'color'}),
+            'theme_line_color': forms.TextInput(attrs={'type': 'color'}),
+            'theme_page_background_color': forms.TextInput(attrs={'type': 'color'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -118,6 +121,19 @@ class ProfileForm(forms.ModelForm):
             self.fields['background'].help_text = (
                 f"Рекомендуемый размер 530x200. Файлы до {HARD_MAX_UPLOAD_MB} МБ принимаются и автоматически сжимаются до {MAX_BACKGROUND_MB} МБ"
             )
+        # Новые цветовые поля
+        if 'theme_background_color' in self.fields:
+            self.fields['theme_background_color'].label = 'ЦВЕТ ФОНА СТРАНИЦЫ'
+            self.fields['theme_background_color'].help_text = 'Общий фон страницы (за кнопками)'
+            self.fields['theme_background_color'].widget.attrs.update({'class': 'form-control', 'style': 'padding:0;height:42px;'})
+        if 'theme_line_color' in self.fields:
+            self.fields['theme_line_color'].label = 'ЦВЕТ ЛИНИЙ/ГРАНИЦ'
+            self.fields['theme_line_color'].help_text = 'Линии разделителей и границы карточек'
+            self.fields['theme_line_color'].widget.attrs.update({'class': 'form-control', 'style': 'padding:0;height:42px;'})
+        if 'theme_page_background_color' in self.fields:
+            self.fields['theme_page_background_color'].label = 'ВНЕШНИЙ ФОН СТРАНИЦЫ'
+            self.fields['theme_page_background_color'].help_text = 'Фон за всей страницей'
+            self.fields['theme_page_background_color'].widget.attrs.update({'class': 'form-control', 'style': 'padding:0;height:42px;'})
         # Телефоны: позволяем хранить несколько через запятую (увеличим длину, проверим поэлементно)
         if 'phone' in self.fields:
             self.fields['phone'] = forms.CharField(required=False, max_length=255)
