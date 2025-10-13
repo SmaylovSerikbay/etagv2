@@ -31,7 +31,7 @@
         {% endif %}
     </div>
 
-    <div class="profile-container">
+    <div class="profile-container" style="--contacts-bg: {{ profile.theme_background_color|default:'#FFFFFF' }}; --page-bg: {{ profile.theme_page_background_color|default:'#FFFFFF' }}; --line-color: {{ profile.theme_line_color|default:'#E6E6E6' }}; background-color: var(--page-bg);">
         {% csrf_token %}
         <!-- Шапка профиля -->
         <div class="profile-header {% if profile.background %}has-bg{% else %}no-bg{% endif %}">
@@ -170,16 +170,16 @@
         </div>
 
         <!-- Основной контент -->
-        <div class="profile-content">
+        <div class="profile-content" style="border-color: var(--line-color);">
             {% if profile.info %}
-            <div class="profile-section">
+            <div class="profile-section" style="border-color: var(--line-color);">
                 <div class="profile-bio">{{ profile.info }}</div>
             </div>
             {% endif %}
 
             <!-- Контакты (Соцсети + Контактные данные + Виджеты) -->
             {% if profile.telegram or profile.whatsapp or profile.instagram or profile.facebook or profile.linkedin or profile.phone or profile.email or profile.website or profile.widgets.all %}
-            <div class="profile-section">
+            <div class="profile-section contacts-section" style="background-color: var(--contacts-bg); border-color: var(--line-color);">
                 <h2 class="section-title">Контакты</h2>
 
         <div class="social-grid" id="contactsContainer" {% if is_owner %}data-sortable="true"{% endif %}>

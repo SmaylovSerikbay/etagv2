@@ -241,7 +241,7 @@ p  { color: var(--gray-700); font-size: 16px; }
 /* Профиль */
 .profile-container {
     min-height: 100vh;
-    background: white;
+    background: var(--page-bg, white);
 }
 
 /* Шапка профиля */
@@ -429,7 +429,7 @@ p  { color: var(--gray-700); font-size: 16px; }
     border-radius: var(--radius-md);
     padding: 2rem;
     margin-bottom: 1.5rem;
-    border: 1px solid var(--gray-200);
+    border: 1px solid var(--line-color, var(--gray-200));
     box-shadow: var(--shadow-sm);
 }
 
