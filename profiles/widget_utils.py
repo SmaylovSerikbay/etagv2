@@ -304,11 +304,6 @@ def get_display_content(content, widget_type):
     if content.startswith('https://www.donationalerts.com/'):
         return content[31:]  # Убираем https://www.donationalerts.com/
     
-    # OnlyFans
-    if content.startswith('https://onlyfans.com/'):
-        return content[21:]  # Убираем https://onlyfans.com/
-    if content.startswith('https://www.onlyfans.com/'):
-        return content[25:]  # Убираем https://www.onlyfans.com/
     
     # Boosty
     if content.startswith('https://boosty.to/'):

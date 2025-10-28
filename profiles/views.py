@@ -757,15 +757,6 @@ def _get_button_and_widget_templates():
             'description': 'Поддержать донатом'
         },
         {
-            'id': 'onlyfans',
-            'title': 'OnlyFans',
-            'icon': 'fas fa-star',
-            'color': '#00AFF0',
-            'widget_type': 'link',
-            'content_placeholder': 'Введите ссылку на профиль',
-            'description': 'Подписаться на OnlyFans'
-        },
-        {
             'id': 'boosty',
             'title': 'Boosty',
             'icon': 'fas fa-bolt',
