@@ -348,7 +348,57 @@ def get_storage_content(content, widget_type, template_id=None):
     if not content:
         return content
     
-    # Если уже содержит протокол, возвращаем как есть
+    # Специальная обработка для 2ГИС - должна быть ДО общей проверки протокола
+    # Проверяем по template_id или по содержимому ссылки
+    is_2gis = widget_type == 'link' and ('two_gis' in (template_id or '') or 
+                                         '2gis.ru' in content.lower() or 
+                                         '2gis.com' in content.lower() or
+                                         content.startswith('2gis.ru/') or 
+                                         content.startswith('2gis.com/'))
+    
+    if is_2gis:
+        # Преобразуем ссылку 2ГИС в маршрут "как проехать"
+        if content.startswith('https://2gis.ru/') or content.startswith('http://2gis.ru/'):
+            # Убираем домен и добавляем параметр маршрута
+            path = content.replace('https://2gis.ru/', '').replace('http://2gis.ru/', '').replace('https://www.2gis.ru/', '').replace('http://www.2gis.ru/', '')
+            # Проверяем, есть ли уже параметры запроса
+            if '?' in path:
+                # Проверяем, есть ли уже параметр m=route
+                if 'm=route' not in path:
+                    return f"https://2gis.ru/{path}&m=route"
+                else:
+                    return f"https://2gis.ru/{path}"
+            else:
+                return f"https://2gis.ru/{path}?m=route"
+        elif content.startswith('https://2gis.com/') or content.startswith('http://2gis.com/'):
+            path = content.replace('https://2gis.com/', '').replace('http://2gis.com/', '').replace('https://www.2gis.com/', '').replace('http://www.2gis.com/', '')
+            if '?' in path:
+                if 'm=route' not in path:
+                    return f"https://2gis.ru/{path}&m=route"
+                else:
+                    return f"https://2gis.ru/{path}"
+            else:
+                return f"https://2gis.ru/{path}?m=route"
+        elif content.startswith('2gis.ru/') or content.startswith('2gis.com/'):
+            path = content.replace('2gis.ru/', '').replace('2gis.com/', '')
+            if '?' in path:
+                if 'm=route' not in path:
+                    return f"https://2gis.ru/{path}&m=route"
+                else:
+                    return f"https://2gis.ru/{path}"
+            else:
+                return f"https://2gis.ru/{path}?m=route"
+        else:
+            # Если это просто путь, добавляем маршрут
+            if '?' in content:
+                if 'm=route' not in content:
+                    return f"https://2gis.ru/{content}&m=route"
+                else:
+                    return f"https://2gis.ru/{content}"
+            else:
+                return f"https://2gis.ru/{content}?m=route"
+    
+    # Если уже содержит протокол, возвращаем как есть (кроме 2ГИС, который обработан выше)
     if content.startswith(('http://', 'https://', 'tel:', 'mailto:', 'sms:', 'skype:', 'viber://', 'ts3server://')):
         return content
     
@@ -442,18 +492,7 @@ def get_storage_content(content, widget_type, template_id=None):
             return f"https://yandex.ru/maps/{content}"
         elif 'google_maps' in (template_id or ''):
             return f"https://maps.google.com/?q={content}"
-        elif 'two_gis' in (template_id or ''):
-            # Преобразуем ссылку 2ГИС в маршрут "как проехать"
-            if content.startswith('https://2gis.ru/'):
-                # Убираем домен и добавляем параметр маршрута
-                path = content.replace('https://2gis.ru/', '').replace('https://www.2gis.ru/', '')
-                return f"https://2gis.ru/{path}?m=route"
-            elif content.startswith('2gis.ru/'):
-                path = content.replace('2gis.ru/', '')
-                return f"https://2gis.ru/{path}?m=route"
-            else:
-                # Если это просто путь, добавляем маршрут
-                return f"https://2gis.ru/{content}?m=route"
+        # Обработка 2ГИС уже выполнена выше, до проверки протокола
         # Для обычных ссылок добавляем https:// если нет протокола
         elif not content.startswith(('http://', 'https://')):
             return f"https://{content}"

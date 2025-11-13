@@ -49,6 +49,8 @@ def _guess_template_id_by_title_icon(title: str, icon: str) -> str:
         ('boom', 'boom'),
         ('sber звук', 'sber_sound'),
         ('youtube музыка', 'youtube_music'),
+        ('2гис', 'two_gis'),
+        ('2gis', 'two_gis'),
     ]
     for needle, tpl in pairs:
         if needle in t or needle in i:
