@@ -557,9 +557,10 @@
                 const contactsContainer = document.getElementById('contactsContainer');
 
                 const phones = [];
+                const whatsappPhones = [];
                 const emails = [];
                 const urls = [];
-                const socialLines = [];
+                const socialUrls = []; // { label, url }
                 const socialProfiles = [];
                 const impps = [];
                 const otherNotes = [];
@@ -606,9 +607,11 @@
                         // чтобы ссылки на мессенджеры не попадали в поле "Веб‑сайт"
                         if (type === 'telegram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
-                            pushUnique(socialLines, 'Telegram: @' + username);
                             // Apple Contacts / iOS социальные профили (service name чувствителен к регистру)
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Telegram:x-apple:${username}`);
+                            // Добавляем как отдельный URL с меткой
+                            const profileUrl = href || ('https://t.me/' + username);
+                            pushUnique(socialUrls, { label: 'Telegram', url: profileUrl });
                             return;
                         }
 
@@ -617,7 +620,8 @@
                             if (number && !number.startsWith('+') && /^\d+$/.test(number)) {
                                 number = '+' + number;
                             }
-                            // НЕ добавляем WhatsApp в заметки, чтобы он не появлялся как "Примечание"
+                            // Сохраняем отдельным телефоном для лучшей поддержки на Android/iOS
+                            pushUnique(whatsappPhones, number);
                             // Соцпрофиль для iOS/macOS
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=WhatsApp:x-apple:${number}`);
                             // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM, Android/iOS могут отобразить как мессенджер)
@@ -627,22 +631,23 @@
 
                         if (type === 'instagram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
-                            pushUnique(socialLines, 'Instagram: @' + username);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Instagram:x-apple:${username}`);
+                            const profileUrl = href || ('https://instagram.com/' + username);
+                            pushUnique(socialUrls, { label: 'Instagram', url: profileUrl });
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(socialLines, 'Facebook: ' + profileUrl);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Facebook:x-apple:${profileUrl}`);
+                            pushUnique(socialUrls, { label: 'Facebook', url: profileUrl });
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(socialLines, 'LinkedIn: ' + profileUrl);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=LinkedIn:x-apple:${profileUrl}`);
+                            pushUnique(socialUrls, { label: 'LinkedIn', url: profileUrl });
                             return;
                         }
 
@@ -699,15 +704,9 @@
                     middleName = nameParts.slice(2).join(' ');
                 }
 
-                // Собираем NOTE
-                const noteLines = [];
-                if (socialLines.length) {
-                    noteLines.push(...socialLines);
-                }
-                if (otherNotes.length) {
-                    noteLines.push(...otherNotes);
-                }
-                const noteText = noteLines.join('\n');
+                // Собираем NOTE — теперь ТОЛЬКО для прочих заметок (виджеты и т.п.),
+                // чтобы WhatsApp и соцсети не попадали в примечания.
+                const noteText = otherNotes.join('\n');
 
                 // Загружаем и конвертируем фото
                 const photoBase64 = avatar ? await loadImageAsBase64(avatar) : '';
@@ -728,6 +727,13 @@
                     }
                 });
 
+                // Номера WhatsApp сохраняем как отдельные телефоны с собственным типом
+                whatsappPhones.forEach(ph => {
+                    if (ph) {
+                        lines.push(`TEL;TYPE=WhatsApp:${ph}`);
+                    }
+                });
+
                 emails.forEach(em => {
                     if (em) {
                         lines.push(`EMAIL:${em}`);
@@ -735,8 +741,21 @@
                 });
 
                 if (urls.length) {
+                    // основной сайт — первый URL
                     lines.push(`URL:${urls[0]}`);
+                    // дополнительные сайты
+                    urls.slice(1).forEach(u => {
+                        lines.push(`URL:${u}`);
+                    });
                 }
+
+                // Соцсети как отдельные URL с пометкой TYPE – большинство клиентов покажет их как дополнительные сайты
+                socialUrls.forEach(su => {
+                    if (su && su.url) {
+                        const label = su.label || 'Social';
+                        lines.push(`URL;TYPE=${label}:${su.url}`);
+                    }
+                });
 
                 // Добавляем мессенджеры как IMPP (поле "Мессенджер" у iOS)
                 impps.forEach(im => {
