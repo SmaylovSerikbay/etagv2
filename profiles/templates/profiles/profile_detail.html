@@ -524,23 +524,6 @@
             const position = "{{ profile.position }}";
             const company = "{{ profile.company }}";
 
-            // Основные контакты (первое значение)
-            const primaryPhone = "{{ profile.phone_list|first|default_if_none:'' }}";
-            const primaryEmail = "{{ profile.email_list|first|default_if_none:'' }}";
-            const primaryWebsite = "{{ profile.website_list|first|default_if_none:'' }}";
-
-            // Все значения для телефонов/почты/сайтов
-            const phones = [{% for ph in profile.phone_list %}"{{ ph }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const emails = [{% for em in profile.email_list %}"{{ em }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const websites = [{% for wb in profile.website_list %}"{{ wb }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-
-            // Соцсети (используем все значения, как отображаются в карточках)
-            const telegramList = [{% for tg in profile.telegram_list %}"{{ tg }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const whatsappList = [{% for wa in profile.whatsapp_list %}"{{ wa }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const instagramList = [{% for ig in profile.instagram_list %}"{{ ig }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const facebookList = [{% for fb in profile.facebook_list %}"{{ fb }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const linkedinList = [{% for li in profile.linkedin_list %}"{{ li }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-
             {% if profile.avatar %}
             const avatar = "{{ profile.avatar.url }}";
             {% else %}
@@ -571,6 +554,110 @@
 
             // Асинхронная функция для создания vCard с фото
             async function createAndDownloadVCard() {
+                const contactsContainer = document.getElementById('contactsContainer');
+
+                const phones = [];
+                const emails = [];
+                const urls = [];
+                const socialLines = [];
+                const otherNotes = [];
+
+                if (contactsContainer) {
+                    const cards = Array.from(contactsContainer.querySelectorAll('.social-card'));
+
+                    cards.forEach(card => {
+                        // Пропускаем скрытые контакты
+                        if (card.classList.contains('inactive')) return;
+
+                        const type = (card.dataset.type || '').toLowerCase();
+                        const value = (card.dataset.value || '').trim();
+                        const link = card.querySelector('.social-card-link');
+                        const href = link ? (link.getAttribute('href') || '').trim() : '';
+                        const labelEl = link ? link.querySelector('span') : null;
+                        const label = labelEl ? labelEl.textContent.trim() : '';
+
+                        const pushUnique = (arr, v) => {
+                            if (!v) return;
+                            if (!arr.includes(v)) arr.push(v);
+                        };
+
+                        // Телефоны
+                        if (type === 'phone' || href.startsWith('tel:')) {
+                            let phoneNumber = value || href.slice(4);
+                            phoneNumber = phoneNumber.replace(/\s+/g, '');
+                            pushUnique(phones, phoneNumber);
+                            return;
+                        }
+
+                        // Email
+                        if (type === 'email' || href.startsWith('mailto:')) {
+                            const email = value || href.slice('mailto:'.length);
+                            pushUnique(emails, email);
+                            return;
+                        }
+
+                        // Веб‑сайты
+                        if (type === 'website') {
+                            pushUnique(urls, value || href);
+                        } else if (href && href.startsWith('http')) {
+                            // Для виджетов и соцсетей тоже считаем это ссылкой
+                            pushUnique(urls, href);
+                        }
+
+                        // Соцсети и мессенджеры по типу карточки
+                        if (type === 'telegram' && (value || href)) {
+                            const username = value || href.replace(/^https?:\/\/t\.me\//i, '');
+                            pushUnique(socialLines, 'Telegram: @' + username);
+                            return;
+                        }
+
+                        if (type === 'whatsapp' && (value || href)) {
+                            const number = value || href.replace(/^https?:\/\/wa\.me\//i, '');
+                            pushUnique(socialLines, 'WhatsApp: ' + number);
+                            return;
+                        }
+
+                        if (type === 'instagram' && (value || href)) {
+                            const username = value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+                            pushUnique(socialLines, 'Instagram: @' + username);
+                            return;
+                        }
+
+                        if (type === 'facebook' && (value || href)) {
+                            pushUnique(socialLines, 'Facebook: ' + (value || href));
+                            return;
+                        }
+
+                        if (type === 'linkedin' && (value || href)) {
+                            pushUnique(socialLines, 'LinkedIn: ' + (value || href));
+                            return;
+                        }
+
+                        // Виджеты контактов: добавляем всё, что не распознали выше, в заметки
+                        if (type === 'widget' && href) {
+                            const noteLabel = label || 'Контакт';
+                            pushUnique(otherNotes, `${noteLabel}: ${href}`);
+                        }
+                    });
+                }
+
+                // Если контейнера нет (резервный вариант) – пробуем взять данные из профиля
+                {% if profile.phone %}
+                if (!phones.length) {
+                    phones.push("{{ profile.phone }}");
+                }
+                {% endif %}
+                {% if profile.email %}
+                if (!emails.length) {
+                    emails.push("{{ profile.email }}");
+                }
+                {% endif %}
+                {% if profile.website %}
+                if (!urls.length) {
+                    urls.push("{{ profile.website }}");
+                }
+                {% endif %}
+
                 // Разбиваем имя на части и раскладываем по полям N: Фамилия;Имя;Отчество;;
                 const nameParts = name.trim().split(/\s+/).filter(Boolean);
                 let firstName = '';
@@ -580,37 +667,23 @@
                 if (nameParts.length === 1) {
                     firstName = nameParts[0];
                 } else if (nameParts.length === 2) {
-                    // Наиболее частый вариант: Имя Фамилия
                     firstName = nameParts[0];
                     lastName = nameParts[1];
                 } else {
-                    // Для Фамилия Имя Отчество – считаем первой фамилией, второй именем, остальное отчеством
                     lastName = nameParts[0];
                     firstName = nameParts[1];
                     middleName = nameParts.slice(2).join(' ');
                 }
 
-                // Создаем информацию о социальных сетях (все значения)
-                const socialLines = [];
-                if (telegramList.length) {
-                    socialLines.push('Telegram: ' + telegramList.map(t => '@' + t).join(', '));
+                // Собираем NOTE
+                const noteLines = [];
+                if (socialLines.length) {
+                    noteLines.push(...socialLines);
                 }
-                if (whatsappList.length) {
-                    socialLines.push('WhatsApp: ' + whatsappList.join(', '));
+                if (otherNotes.length) {
+                    noteLines.push(...otherNotes);
                 }
-                if (instagramList.length) {
-                    socialLines.push('Instagram: ' + instagramList.map(i => '@' + i).join(', '));
-                }
-                if (facebookList.length) {
-                    socialLines.push('Facebook: ' + facebookList.join(', '));
-                }
-                if (linkedinList.length) {
-                    socialLines.push('LinkedIn: ' + linkedinList.join(', '));
-                }
-                if (websites.length) {
-                    socialLines.push('Website: ' + websites.join(', '));
-                }
-                const socialInfo = socialLines.join('\n');
+                const noteText = noteLines.join('\n');
 
                 // Загружаем и конвертируем фото
                 const photoBase64 = avatar ? await loadImageAsBase64(avatar) : '';
@@ -625,41 +698,40 @@
                     company ? `ORG:${company}` : ''
                 ];
 
-                // Все телефоны
                 phones.forEach(ph => {
                     if (ph) {
                         lines.push(`TEL;TYPE=CELL,VOICE:${ph}`);
                     }
                 });
 
-                // Все e‑mail
                 emails.forEach(em => {
                     if (em) {
                         lines.push(`EMAIL;TYPE=INTERNET:${em}`);
                     }
                 });
 
-                // Основной сайт в URL (остальные остаются в NOTE)
-                if (primaryWebsite) {
-                    lines.push(`URL:${primaryWebsite}`);
+                if (urls.length) {
+                    // Первый сайт – в URL, остальные останутся в NOTE или как отдельные URL
+                    lines.push(`URL:${urls[0]}`);
+                    for (let i = 1; i < urls.length; i++) {
+                        lines.push(`URL:${urls[i]}`);
+                    }
                 }
 
                 if (photoBase64) {
                     lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${photoBase64}`);
                 }
-                if (socialInfo) {
-                    lines.push(`NOTE:${socialInfo}`);
+                if (noteText) {
+                    lines.push(`NOTE:${noteText}`);
                 }
 
                 lines.push('END:VCARD');
 
                 const vcard = lines.filter(Boolean).join('\r\n');
 
-                // Создаем Blob и URL
                 const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
 
-                // Создаем ссылку для скачивания
                 const link = document.createElement('a');
                 link.style.display = 'none';
                 link.href = url;
@@ -667,14 +739,12 @@
                 document.body.appendChild(link);
                 link.click();
 
-                // Очищаем
                 setTimeout(() => {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
                 }, 100);
             }
 
-            // Запускаем создание и скачивание vCard
             createAndDownloadVCard().catch(console.error);
         }
 
