@@ -561,6 +561,7 @@
                 const urls = [];
                 const socialLines = [];
                 const socialProfiles = [];
+                const impps = [];
                 const otherNotes = [];
 
                 if (contactsContainer) {
@@ -600,40 +601,44 @@
                         // Соцсети и мессенджеры по типу карточки — сначала обрабатываем их отдельно,
                         // чтобы ссылки на мессенджеры не попадали в поле "Веб‑сайт"
                         if (type === 'telegram' && (value || href)) {
-                            const username = value || href.replace(/^https?:\/\/t\.me\//i, '');
+                            const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
                             const profileUrl = href || ('https://t.me/' + username);
                             pushUnique(socialLines, 'Telegram: @' + username);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=telegram:${profileUrl}`);
+                            // Apple Contacts / iOS социальные профили
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=telegram:x-apple:${encodeURIComponent(username)}`);
                             return;
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
-                            const number = value || href.replace(/^https?:\/\/wa\.me\//i, '');
+                            const number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/\s+/g, '');
                             const profileUrl = href || ('https://wa.me/' + number);
                             pushUnique(socialLines, 'WhatsApp: ' + number);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=whatsapp:${profileUrl}`);
+                            // Соцпрофиль для iOS/macOS
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=whatsapp:x-apple:${encodeURIComponent(number)}`);
+                            // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM)
+                            pushUnique(impps, `IMPP;SERVICE-TYPE=WhatsApp:tag:whatsapp:${encodeURIComponent(number)}`);
                             return;
                         }
 
                         if (type === 'instagram' && (value || href)) {
-                            const username = value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+                            const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
                             const profileUrl = href || ('https://instagram.com/' + username);
                             pushUnique(socialLines, 'Instagram: @' + username);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=instagram:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=instagram:x-apple:${encodeURIComponent(username)}`);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(socialLines, 'Facebook: ' + profileUrl);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=facebook:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=facebook:x-apple:${encodeURIComponent(profileUrl)}`);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(socialLines, 'LinkedIn: ' + profileUrl);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=linkedin:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=linkedin:x-apple:${encodeURIComponent(profileUrl)}`);
                             return;
                         }
 
@@ -728,6 +733,13 @@
                 if (urls.length) {
                     lines.push(`URL:${urls[0]}`);
                 }
+
+                // Добавляем мессенджеры как IMPP (поле "Мессенджер" у iOS)
+                impps.forEach(im => {
+                    if (im) {
+                        lines.push(im);
+                    }
+                });
 
                 // Добавляем соцсети как отдельные X-SOCIALPROFILE, чтобы
                 // поддерживаемые телефоны могли заполнить раздел "Соцсети"
