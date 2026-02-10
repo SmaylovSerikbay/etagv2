@@ -523,14 +523,24 @@
             const name = "{{ profile.name }}";
             const position = "{{ profile.position }}";
             const company = "{{ profile.company }}";
-            const phone = "{{ profile.phone }}";
-            const email = "{{ profile.email }}";
-            const website = "{{ profile.website }}";
-            const telegram = "{{ profile.telegram }}";
-            const whatsapp = "{{ profile.whatsapp }}";
-            const instagram = "{{ profile.instagram }}";
-            const facebook = "{{ profile.facebook }}";
-            const linkedin = "{{ profile.linkedin }}";
+
+            // Основные контакты (первое значение)
+            const primaryPhone = "{{ profile.phone_list|first|default_if_none:'' }}";
+            const primaryEmail = "{{ profile.email_list|first|default_if_none:'' }}";
+            const primaryWebsite = "{{ profile.website_list|first|default_if_none:'' }}";
+
+            // Все значения для телефонов/почты/сайтов
+            const phones = [{% for ph in profile.phone_list %}"{{ ph }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const emails = [{% for em in profile.email_list %}"{{ em }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const websites = [{% for wb in profile.website_list %}"{{ wb }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+            // Соцсети (используем все значения, как отображаются в карточках)
+            const telegramList = [{% for tg in profile.telegram_list %}"{{ tg }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const whatsappList = [{% for wa in profile.whatsapp_list %}"{{ wa }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const instagramList = [{% for ig in profile.instagram_list %}"{{ ig }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const facebookList = [{% for fb in profile.facebook_list %}"{{ fb }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const linkedinList = [{% for li in profile.linkedin_list %}"{{ li }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+
             {% if profile.avatar %}
             const avatar = "{{ profile.avatar.url }}";
             {% else %}
@@ -561,42 +571,92 @@
 
             // Асинхронная функция для создания vCard с фото
             async function createAndDownloadVCard() {
-                // Разбиваем имя на части
-                const nameParts = name.split(' ');
-                const lastName = nameParts.length > 1 ? nameParts.pop() : '';
-                const firstName = nameParts.join(' ');
+                // Разбиваем имя на части и раскладываем по полям N: Фамилия;Имя;Отчество;;
+                const nameParts = name.trim().split(/\s+/).filter(Boolean);
+                let firstName = '';
+                let lastName = '';
+                let middleName = '';
 
-                // Создаем информацию о социальных сетях
-                const socialInfo = [
-                    telegram ? `Telegram: @${telegram}` : '',
-                    whatsapp ? `WhatsApp: ${whatsapp}` : '',
-                    instagram ? `Instagram: @${instagram}` : '',
-                    facebook ? `Facebook: ${facebook}` : '',
-                    linkedin ? `LinkedIn: ${linkedin}` : '',
-                    website ? `Website: ${website}` : ''
-                ].filter(Boolean).join('\n');
+                if (nameParts.length === 1) {
+                    firstName = nameParts[0];
+                } else if (nameParts.length === 2) {
+                    // Наиболее частый вариант: Имя Фамилия
+                    firstName = nameParts[0];
+                    lastName = nameParts[1];
+                } else {
+                    // Для Фамилия Имя Отчество – считаем первой фамилией, второй именем, остальное отчеством
+                    lastName = nameParts[0];
+                    firstName = nameParts[1];
+                    middleName = nameParts.slice(2).join(' ');
+                }
+
+                // Создаем информацию о социальных сетях (все значения)
+                const socialLines = [];
+                if (telegramList.length) {
+                    socialLines.push('Telegram: ' + telegramList.map(t => '@' + t).join(', '));
+                }
+                if (whatsappList.length) {
+                    socialLines.push('WhatsApp: ' + whatsappList.join(', '));
+                }
+                if (instagramList.length) {
+                    socialLines.push('Instagram: ' + instagramList.map(i => '@' + i).join(', '));
+                }
+                if (facebookList.length) {
+                    socialLines.push('Facebook: ' + facebookList.join(', '));
+                }
+                if (linkedinList.length) {
+                    socialLines.push('LinkedIn: ' + linkedinList.join(', '));
+                }
+                if (websites.length) {
+                    socialLines.push('Website: ' + websites.join(', '));
+                }
+                const socialInfo = socialLines.join('\n');
 
                 // Загружаем и конвертируем фото
                 const photoBase64 = avatar ? await loadImageAsBase64(avatar) : '';
 
-                // Создаем vCard
-                const vcard = [
+                // Формируем строки vCard
+                const lines = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
                     `FN:${name}`,
-                    `N:${lastName};${firstName};;;`,
+                    `N:${lastName};${firstName};${middleName};;`,
                     position ? `TITLE:${position}` : '',
-                    company ? `ORG:${company}` : '',
-                    phone ? `TEL;TYPE=CELL,VOICE:${phone}` : '',
-                    email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-                    website ? `URL:${website}` : '',
-                    photoBase64 ? `PHOTO;ENCODING=b;TYPE=JPEG:${photoBase64}` : '',
-                    socialInfo ? `NOTE:${socialInfo}` : '',
-                    'END:VCARD'
-                ].filter(Boolean).join('\r\n');
+                    company ? `ORG:${company}` : ''
+                ];
+
+                // Все телефоны
+                phones.forEach(ph => {
+                    if (ph) {
+                        lines.push(`TEL;TYPE=CELL,VOICE:${ph}`);
+                    }
+                });
+
+                // Все e‑mail
+                emails.forEach(em => {
+                    if (em) {
+                        lines.push(`EMAIL;TYPE=INTERNET:${em}`);
+                    }
+                });
+
+                // Основной сайт в URL (остальные остаются в NOTE)
+                if (primaryWebsite) {
+                    lines.push(`URL:${primaryWebsite}`);
+                }
+
+                if (photoBase64) {
+                    lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${photoBase64}`);
+                }
+                if (socialInfo) {
+                    lines.push(`NOTE:${socialInfo}`);
+                }
+
+                lines.push('END:VCARD');
+
+                const vcard = lines.filter(Boolean).join('\r\n');
 
                 // Создаем Blob и URL
-                const blob = new Blob([vcard], { type: 'text/x-vcard' });
+                const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
 
                 // Создаем ссылку для скачивания
@@ -604,7 +664,6 @@
                 link.style.display = 'none';
                 link.href = url;
                 link.setAttribute('download', `${name}.vcf`);
-                link.setAttribute('target', '_blank');
                 document.body.appendChild(link);
                 link.click();
 
