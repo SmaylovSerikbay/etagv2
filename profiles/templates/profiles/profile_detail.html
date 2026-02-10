@@ -602,43 +602,40 @@
                         // чтобы ссылки на мессенджеры не попадали в поле "Веб‑сайт"
                         if (type === 'telegram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
-                            const profileUrl = href || ('https://t.me/' + username);
                             pushUnique(socialLines, 'Telegram: @' + username);
-                            // Apple Contacts / iOS социальные профили
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=telegram:x-apple:${encodeURIComponent(username)}`);
+                            // Apple Contacts / iOS социальные профили (service name чувствителен к регистру)
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Telegram:x-apple:${username}`);
                             return;
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
                             const number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/\s+/g, '');
-                            const profileUrl = href || ('https://wa.me/' + number);
                             pushUnique(socialLines, 'WhatsApp: ' + number);
                             // Соцпрофиль для iOS/macOS
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=whatsapp:x-apple:${encodeURIComponent(number)}`);
-                            // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM)
-                            pushUnique(impps, `IMPP;SERVICE-TYPE=WhatsApp:tag:whatsapp:${encodeURIComponent(number)}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=WhatsApp:x-apple:${number}`);
+                            // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM, Android/iOS могут отобразить как мессенджер)
+                            pushUnique(impps, `IMPP;SERVICE-TYPE=WhatsApp:tag:whatsapp:${number}`);
                             return;
                         }
 
                         if (type === 'instagram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
-                            const profileUrl = href || ('https://instagram.com/' + username);
                             pushUnique(socialLines, 'Instagram: @' + username);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=instagram:x-apple:${encodeURIComponent(username)}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Instagram:x-apple:${username}`);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(socialLines, 'Facebook: ' + profileUrl);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=facebook:x-apple:${encodeURIComponent(profileUrl)}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Facebook:x-apple:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(socialLines, 'LinkedIn: ' + profileUrl);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=linkedin:x-apple:${encodeURIComponent(profileUrl)}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=LinkedIn:x-apple:${profileUrl}`);
                             return;
                         }
 
