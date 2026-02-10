@@ -560,6 +560,7 @@
                 const emails = [];
                 const urls = [];
                 const socialLines = [];
+                const socialProfiles = [];
                 const otherNotes = [];
 
                 if (contactsContainer) {
@@ -596,41 +597,55 @@
                             return;
                         }
 
-                        // Веб‑сайты
-                        if (type === 'website') {
-                            pushUnique(urls, value || href);
-                        } else if (href && href.startsWith('http')) {
-                            // Для виджетов и соцсетей тоже считаем это ссылкой
-                            pushUnique(urls, href);
-                        }
-
-                        // Соцсети и мессенджеры по типу карточки
+                        // Соцсети и мессенджеры по типу карточки — сначала обрабатываем их отдельно,
+                        // чтобы ссылки на мессенджеры не попадали в поле "Веб‑сайт"
                         if (type === 'telegram' && (value || href)) {
                             const username = value || href.replace(/^https?:\/\/t\.me\//i, '');
+                            const profileUrl = href || ('https://t.me/' + username);
                             pushUnique(socialLines, 'Telegram: @' + username);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=telegram:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
                             const number = value || href.replace(/^https?:\/\/wa\.me\//i, '');
+                            const profileUrl = href || ('https://wa.me/' + number);
                             pushUnique(socialLines, 'WhatsApp: ' + number);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=whatsapp:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'instagram' && (value || href)) {
                             const username = value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+                            const profileUrl = href || ('https://instagram.com/' + username);
                             pushUnique(socialLines, 'Instagram: @' + username);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=instagram:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
-                            pushUnique(socialLines, 'Facebook: ' + (value || href));
+                            const profileUrl = value || href;
+                            pushUnique(socialLines, 'Facebook: ' + profileUrl);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=facebook:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
-                            pushUnique(socialLines, 'LinkedIn: ' + (value || href));
+                            const profileUrl = value || href;
+                            pushUnique(socialLines, 'LinkedIn: ' + profileUrl);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;TYPE=linkedin:${profileUrl}`);
                             return;
+                        }
+
+                        // Веб‑сайты: сюда попадает только явный тип "website"
+                        // или произвольные ссылки, которые не относятся к соцсетям/мессенджерам.
+                        if (type === 'website') {
+                            pushUnique(urls, value || href);
+                        } else if (href && href.startsWith('http')) {
+                            // Пропускаем типовые ссылки соцсетей и мессенджеров, чтобы они не шли в Website
+                            if (!/^https?:\/\/(t\.me|wa\.me|(www\.)?instagram\.com|facebook\.com|linkedin\.com)\//i.test(href)) {
+                                pushUnique(urls, href);
+                            }
                         }
 
                         // Виджеты контактов: добавляем всё, что не распознали выше, в заметки
@@ -713,6 +728,14 @@
                 if (urls.length) {
                     lines.push(`URL:${urls[0]}`);
                 }
+
+                // Добавляем соцсети как отдельные X-SOCIALPROFILE, чтобы
+                // поддерживаемые телефоны могли заполнить раздел "Соцсети"
+                socialProfiles.forEach(sp => {
+                    if (sp) {
+                        lines.push(sp);
+                    }
+                });
 
                 if (photoBase64) {
                     lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${photoBase64}`);
