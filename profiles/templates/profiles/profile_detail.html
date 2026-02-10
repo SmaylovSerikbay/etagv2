@@ -700,22 +700,18 @@
 
                 phones.forEach(ph => {
                     if (ph) {
-                        lines.push(`TEL;TYPE=CELL,VOICE:${ph}`);
+                        lines.push(`TEL:${ph}`);
                     }
                 });
 
                 emails.forEach(em => {
                     if (em) {
-                        lines.push(`EMAIL;TYPE=INTERNET:${em}`);
+                        lines.push(`EMAIL:${em}`);
                     }
                 });
 
                 if (urls.length) {
-                    // Первый сайт – в URL, остальные останутся в NOTE или как отдельные URL
                     lines.push(`URL:${urls[0]}`);
-                    for (let i = 1; i < urls.length; i++) {
-                        lines.push(`URL:${urls[i]}`);
-                    }
                 }
 
                 if (photoBase64) {
