@@ -586,7 +586,11 @@
                         // Телефоны
                         if (type === 'phone' || href.startsWith('tel:')) {
                             let phoneNumber = value || href.slice(4);
-                            phoneNumber = phoneNumber.replace(/\s+/g, '');
+                            // Убираем пробелы и служебные символы, но сохраняем "+" в начале
+                            phoneNumber = phoneNumber.replace(/[\s()-]/g, '');
+                            if (phoneNumber && !phoneNumber.startsWith('+') && /^\d+$/.test(phoneNumber)) {
+                                phoneNumber = '+' + phoneNumber;
+                            }
                             pushUnique(phones, phoneNumber);
                             return;
                         }
@@ -609,8 +613,11 @@
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
-                            const number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/\s+/g, '');
-                            pushUnique(socialLines, 'WhatsApp: ' + number);
+                            let number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/[\s()-]/g, '');
+                            if (number && !number.startsWith('+') && /^\d+$/.test(number)) {
+                                number = '+' + number;
+                            }
+                            // НЕ добавляем WhatsApp в заметки, чтобы он не появлялся как "Примечание"
                             // Соцпрофиль для iOS/macOS
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=WhatsApp:x-apple:${number}`);
                             // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM, Android/iOS могут отобразить как мессенджер)
