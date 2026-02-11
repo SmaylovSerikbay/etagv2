@@ -560,7 +560,26 @@
                 const whatsappPhones = [];
                 const emails = [];
                 const urls = [];
+                const typedUrls = [];      // URL;TYPE=instagram:..., URL;TYPE=telegram:...
+                const impps = [];          // IMPP;X-SERVICE=WhatsApp:..., IMPP:tg://...
+                const socialProfiles = []; // X-SOCIALPROFILE;type=instagram:...
                 const otherNotes = [];
+
+                // Нормализация телефонов:
+                // - trim + удалить пробелы/скобки/дефисы (кроме ведущего +)
+                // - если начинается с 00 → заменить первые 00 на +
+                // - если начинается с + → оставить как есть
+                // - если не начинается с + и не с 00 → вернуть как есть (без добавления кода страны)
+                function normalizePhone(raw) {
+                    if (!raw) return raw;
+                    let s = String(raw).trim();
+                    // убираем пробелы, скобки и дефисы
+                    s = s.replace(/[()\s-]/g, '');
+                    if (s.startsWith('00')) {
+                        s = '+' + s.slice(2);
+                    }
+                    return s;
+                }
 
                 if (contactsContainer) {
                     const cards = Array.from(contactsContainer.querySelectorAll('.social-card'));
@@ -586,7 +605,7 @@
                             // Оставляем номер в том виде, как ввёл пользователь,
                             // только убираем пробелы и скобки, НИЧЕГО не добавляем спереди.
                             let phoneNumber = value || href.slice(4);
-                            phoneNumber = phoneNumber.replace(/[\s()-]/g, '');
+                            phoneNumber = normalizePhone(phoneNumber);
                             pushUnique(phones, phoneNumber);
                             return;
                         }
@@ -603,14 +622,26 @@
                             const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
                             const profileUrl = href || ('https://t.me/' + username);
                             pushUnique(urls, profileUrl);
+                            // Специализированные поля для Telegram
+                            pushUnique(typedUrls, `URL;TYPE=telegram:${profileUrl}`);
+                            pushUnique(impps, `IMPP:tg://resolve?domain=${username}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=telegram:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
                             // Для WhatsApp мы хотим, чтобы в vCard был только номер телефона,
                             // без текста "WhatsApp:" и без записи в примечания.
-                            let number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/[\s()-]/g, '');
-                            // НИЧЕГО не добавляем спереди (ни "+", ни текст).
+                            let number = (value || href.replace(/^https?:\/\/wa\.me\//i, ''));
+                            number = normalizePhone(number);
+                            pushUnique(whatsappPhones, number);
+                            return;
+                        }
+
+                        // Ссылки вида https://wa.me/... в произвольных виджетах тоже считаем WhatsApp
+                        if (href && /^https?:\/\/wa\.me\//i.test(href)) {
+                            let number = href.replace(/^https?:\/\/wa\.me\//i, '');
+                            number = normalizePhone(number);
                             pushUnique(whatsappPhones, number);
                             return;
                         }
@@ -619,18 +650,24 @@
                             const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
                             const profileUrl = href || ('https://instagram.com/' + username);
                             pushUnique(urls, profileUrl);
+                            pushUnique(typedUrls, `URL;TYPE=instagram:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=instagram:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(urls, profileUrl);
+                            pushUnique(typedUrls, `URL;TYPE=facebook:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=facebook:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
                             pushUnique(urls, profileUrl);
+                            pushUnique(typedUrls, `URL;TYPE=linkedin:${profileUrl}`);
+                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=linkedin:${profileUrl}`);
                             return;
                         }
 
@@ -698,16 +735,33 @@
                     company ? `ORG:${company}` : ''
                 ];
 
+                // Чтобы не дублировать одинаковые телефоны
+                const telSet = new Set();
+
                 phones.forEach(ph => {
                     if (ph) {
-                        lines.push(`TEL:${ph}`);
+                        const normalized = normalizePhone(ph);
+                        if (!normalized) return;
+                        if (telSet.has(normalized)) return;
+                        telSet.add(normalized);
+                        // Базовый мобильный номер
+                        lines.push(`TEL;TYPE=CELL:${normalized}`);
                     }
                 });
 
-                // Номера WhatsApp сохраняем как отдельные телефоны
+                // Номера WhatsApp: добавляем как отдельные телефоны с меткой и IMPP
                 whatsappPhones.forEach(ph => {
                     if (ph) {
-                        lines.push(`TEL:${ph}`);
+                        const normalized = normalizePhone(ph);
+                        if (!normalized) return;
+                        if (!telSet.has(normalized)) {
+                            telSet.add(normalized);
+                            // Дублируем как обычный мобильный, если его ещё нет
+                            lines.push(`TEL;TYPE=CELL:${normalized}`);
+                        }
+                        // Явная пометка как WhatsApp
+                        lines.push(`TEL;TYPE=CELL;X-ABLabel=WhatsApp:${normalized}`);
+                        lines.push(`IMPP;X-SERVICE=WhatsApp:whatsapp:${normalized}`);
                     }
                 });
 
@@ -720,6 +774,13 @@
                 urls.forEach(u => {
                     if (u) {
                         lines.push(`URL:${u}`);
+                    }
+                });
+
+                // Типизированные URL для соцсетей (URL;TYPE=instagram:..., URL;TYPE=telegram:...)
+                typedUrls.forEach(u => {
+                    if (u) {
+                        lines.push(u);
                     }
                 });
 
@@ -748,6 +809,9 @@
                 lines.push('END:VCARD');
 
                 const vcard = lines.filter(Boolean).join('\r\n');
+
+                // Временное логирование для отладки экспорта
+                console.log('Generated vCard:', vcard);
 
                 const blob = new Blob([vcard], { type: 'text/vcard' });
                 const url = window.URL.createObjectURL(blob);
