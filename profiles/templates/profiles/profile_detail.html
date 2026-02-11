@@ -560,9 +560,6 @@
                 const whatsappPhones = [];
                 const emails = [];
                 const urls = [];
-                const socialUrls = []; // { label, url }
-                const socialProfiles = [];
-                const impps = [];
                 const otherNotes = [];
 
                 if (contactsContainer) {
@@ -586,12 +583,10 @@
 
                         // Телефоны
                         if (type === 'phone' || href.startsWith('tel:')) {
+                            // Оставляем номер в том виде, как ввёл пользователь,
+                            // только убираем пробелы и скобки, НИЧЕГО не добавляем спереди.
                             let phoneNumber = value || href.slice(4);
-                            // Убираем пробелы и служебные символы, но сохраняем "+" в начале
                             phoneNumber = phoneNumber.replace(/[\s()-]/g, '');
-                            if (phoneNumber && !phoneNumber.startsWith('+') && /^\d+$/.test(phoneNumber)) {
-                                phoneNumber = '+' + phoneNumber;
-                            }
                             pushUnique(phones, phoneNumber);
                             return;
                         }
@@ -603,63 +598,45 @@
                             return;
                         }
 
-                        // Соцсети и мессенджеры по типу карточки — сначала обрабатываем их отдельно,
-                        // чтобы ссылки на мессенджеры не попадали в поле "Веб‑сайт"
+                        // Соцсети и мессенджеры
                         if (type === 'telegram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
-                            // Apple Contacts / iOS социальные профили (service name чувствителен к регистру)
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Telegram:x-apple:${username}`);
-                            // Добавляем как отдельный URL с меткой
                             const profileUrl = href || ('https://t.me/' + username);
-                            pushUnique(socialUrls, { label: 'Telegram', url: profileUrl });
+                            pushUnique(urls, profileUrl);
                             return;
                         }
 
                         if (type === 'whatsapp' && (value || href)) {
+                            // Для WhatsApp мы хотим, чтобы в vCard был только номер телефона,
+                            // без текста "WhatsApp:" и без записи в примечания.
                             let number = (value || href.replace(/^https?:\/\/wa\.me\//i, '')).replace(/[\s()-]/g, '');
-                            if (number && !number.startsWith('+') && /^\d+$/.test(number)) {
-                                number = '+' + number;
-                            }
-                            // Сохраняем отдельным телефоном для лучшей поддержки на Android/iOS
+                            // НИЧЕГО не добавляем спереди (ни "+", ни текст).
                             pushUnique(whatsappPhones, number);
-                            // Соцпрофиль для iOS/macOS
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=WhatsApp:x-apple:${number}`);
-                            // Мессенджер через IMPP + SERVICE-TYPE (стандартное поле для IM, Android/iOS могут отобразить как мессенджер)
-                            pushUnique(impps, `IMPP;SERVICE-TYPE=WhatsApp:tag:whatsapp:${number}`);
                             return;
                         }
 
                         if (type === 'instagram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Instagram:x-apple:${username}`);
                             const profileUrl = href || ('https://instagram.com/' + username);
-                            pushUnique(socialUrls, { label: 'Instagram', url: profileUrl });
+                            pushUnique(urls, profileUrl);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=Facebook:x-apple:${profileUrl}`);
-                            pushUnique(socialUrls, { label: 'Facebook', url: profileUrl });
+                            pushUnique(urls, profileUrl);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=LinkedIn:x-apple:${profileUrl}`);
-                            pushUnique(socialUrls, { label: 'LinkedIn', url: profileUrl });
+                            pushUnique(urls, profileUrl);
                             return;
                         }
 
                         // Веб‑сайты: сюда попадает только явный тип "website"
-                        // или произвольные ссылки, которые не относятся к соцсетям/мессенджерам.
                         if (type === 'website') {
                             pushUnique(urls, value || href);
-                        } else if (href && href.startsWith('http')) {
-                            // Пропускаем типовые ссылки соцсетей и мессенджеров, чтобы они не шли в Website
-                            if (!/^https?:\/\/(t\.me|wa\.me|(www\.)?instagram\.com|facebook\.com|linkedin\.com)\//i.test(href)) {
-                                pushUnique(urls, href);
-                            }
                         }
 
                         // Виджеты контактов: добавляем всё, что не распознали выше, в заметки
@@ -704,7 +681,7 @@
                     middleName = nameParts.slice(2).join(' ');
                 }
 
-                // Собираем NOTE — теперь ТОЛЬКО для прочих заметок (виджеты и т.п.),
+                // Собираем NOTE — ТОЛЬКО для прочих заметок (виджеты и т.п.),
                 // чтобы WhatsApp и соцсети не попадали в примечания.
                 const noteText = otherNotes.join('\n');
 
@@ -727,10 +704,10 @@
                     }
                 });
 
-                // Номера WhatsApp сохраняем как отдельные телефоны с собственным типом
+                // Номера WhatsApp сохраняем как отдельные телефоны
                 whatsappPhones.forEach(ph => {
                     if (ph) {
-                        lines.push(`TEL;TYPE=WhatsApp:${ph}`);
+                        lines.push(`TEL:${ph}`);
                     }
                 });
 
@@ -740,20 +717,9 @@
                     }
                 });
 
-                if (urls.length) {
-                    // основной сайт — первый URL
-                    lines.push(`URL:${urls[0]}`);
-                    // дополнительные сайты
-                    urls.slice(1).forEach(u => {
+                urls.forEach(u => {
+                    if (u) {
                         lines.push(`URL:${u}`);
-                    });
-                }
-
-                // Соцсети как отдельные URL с пометкой TYPE – большинство клиентов покажет их как дополнительные сайты
-                socialUrls.forEach(su => {
-                    if (su && su.url) {
-                        const label = su.label || 'Social';
-                        lines.push(`URL;TYPE=${label}:${su.url}`);
                     }
                 });
 
