@@ -23,6 +23,16 @@ def _guess_template_id_by_title_icon(title: str, icon: str) -> str:
     t = (title or '').lower()
     i = (icon or '').lower()
     pairs = [
+        ('phone', 'phone'),
+        ('fa-phone', 'phone'),
+        ('телефон', 'phone'),
+        ('позвон', 'phone'),
+        ('звон', 'phone'),
+        ('call', 'phone'),
+        ('email', 'email'),
+        ('почта', 'email'),
+        ('mail', 'email'),
+        ('fa-envelope', 'email'),
         ('whatsapp', 'whatsapp'),
         ('telegram', 'telegram'),
         ('instagram', 'instagram'),
@@ -167,6 +177,31 @@ def profile_detail(request, hash):
 
     # Разрешаем просмотр профиля без авторизации; владелец определяется только для авторизованных
     is_owner = request.user.is_authenticated and profile.user == request.user
+
+    # Контакты теперь управляются через виджеты. Чтобы email, который ставится при регистрации,
+    # можно было редактировать/дублировать/скрывать/удалять, конвертируем его в виджет владельцу.
+    if is_owner:
+        email_value = (profile.email or '').strip()
+        if email_value:
+            # Берём первый email из списка, остальные пользователь может добавить виджетами
+            first_email = email_value.split(',')[0].strip()
+            if first_email:
+                mailto = f"mailto:{first_email}"
+                has_widget = ProfileWidget.objects.filter(profile=profile, content__iexact=mailto).exists()
+                if not has_widget:
+                    ProfileWidget.objects.create(
+                        profile=profile,
+                        widget_type='contact',
+                        title='Email',
+                        content=mailto,
+                        icon='fas fa-envelope',
+                        color='#444444',
+                        is_active=True,
+                        order=profile.widgets.count(),
+                    )
+                # очищаем поле профиля, чтобы не было "неуправляемого" дубля
+                profile.email = ''
+                profile.save(update_fields=['email'])
     return render(request, 'profiles/profile_detail.html', {
         'profile': profile,
         'is_owner': is_owner
