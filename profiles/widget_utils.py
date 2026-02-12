@@ -2,6 +2,27 @@
 Утилиты для работы с содержимым виджетов
 """
 
+def _normalize_phone(raw: str) -> str:
+    """
+    Нормализация телефона для хранения/экспорта (без авто-добавления кода страны):
+    - trim
+    - убрать пробелы, скобки, дефисы
+    - если начинается с 00 -> заменить на +
+    - если начинается с + -> оставить +
+    - если нет +/00 -> оставить как есть
+    """
+    if not raw:
+        return raw
+    s = str(raw).strip()
+    if s.startswith('tel:'):
+        s = s[4:]
+    if s.startswith('sms:'):
+        s = s[4:]
+    s = s.replace(' ', '').replace('(', '').replace(')', '').replace('-', '')
+    if s.startswith('00'):
+        s = '+' + s[2:]
+    return s
+
 def get_display_content(content, widget_type):
     """
     Преобразует содержимое виджета в удобочитаемый вид для отображения в формах редактирования
@@ -61,6 +82,8 @@ def get_display_content(content, widget_type):
     # WhatsApp
     if content.startswith('https://wa.me/'):
         return content[13:]  # Убираем https://wa.me/
+    if content.startswith('whatsapp:'):
+        return content[9:]  # Убираем whatsapp:
     
     # Facebook
     if content.startswith('https://facebook.com/'):
@@ -405,7 +428,7 @@ def get_storage_content(content, widget_type, template_id=None):
     # Обрабатываем в зависимости от типа виджета и шаблона
     if widget_type == 'contact':
         if 'phone' in (template_id or ''):
-            return f"tel:{content.replace('+', '').replace(' ', '')}"
+            return f"tel:{_normalize_phone(content)}"
         elif 'email' in (template_id or ''):
             return f"mailto:{content}"
         # Фолбэк без template_id: определяем по содержимому
@@ -419,11 +442,13 @@ def get_storage_content(content, widget_type, template_id=None):
                                    .replace('(', '')
                                    .replace(')', ''))
         if digits_only.isdigit():
-            return f"tel:{digits_only if normalized.startswith('+') else digits_only}"
+            return f"tel:{_normalize_phone(normalized)}"
     
     elif widget_type == 'social':
         if 'whatsapp' in (template_id or ''):
-            return f"https://wa.me/{content.replace('+', '').replace(' ', '')}"
+            # Храним исходный номер (с возможным +) отдельно от URL, чтобы не терять "+"
+            # и корректно экспортировать в контакты. URL wa.me будет сформирован при отображении.
+            return f"whatsapp:{_normalize_phone(content)}"
         elif 'telegram' in (template_id or ''):
             return f"https://t.me/{content.replace('@', '')}"
         elif 'instagram' in (template_id or ''):
@@ -483,7 +508,7 @@ def get_storage_content(content, widget_type, template_id=None):
     
     elif widget_type == 'button':
         if 'sms' in (template_id or ''):
-            return f"sms:{content.replace('+', '').replace(' ', '')}"
+            return f"sms:{_normalize_phone(content)}"
         elif 'location' in (template_id or ''):
             return f"https://maps.google.com/?q={content}"
     
@@ -508,7 +533,7 @@ def get_storage_content(content, widget_type, template_id=None):
                           .replace('(', '')
                           .replace(')', ''))
         if digits_only.isdigit() and len(digits_only) >= 5:
-            return f"tel:{digits_only if raw.startswith('+') else digits_only}"
+            return f"tel:{_normalize_phone(raw)}"
 
     # Если не подошло ни одно условие, возвращаем как есть
     return content

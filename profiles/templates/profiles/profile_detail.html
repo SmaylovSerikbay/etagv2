@@ -219,7 +219,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        <a href="https://wa.me/{{ wa }}" class="social-card-link">
+                        <a href="https://wa.me/{{ wa|cut:'+' }}" class="social-card-link">
                             <i class="fab fa-whatsapp"></i>
                             <span>WhatsApp</span>
                         </a>
@@ -290,6 +290,28 @@
                     {% endfor %}
 
                     {% for ph in profile.phone_list %}
+                    {% if ph|slice:":4" == "tel:" %}
+                    {% with ph_clean=ph|slice:"4:" %}
+                    <div class="social-card phone" data-type="phone" data-value="{{ ph_clean }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                        {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
+                        {% if is_owner %}
+                        <div class="card-menu">
+                            <button type="button" class="card-menu-btn" aria-label="Действия"><i class="fas fa-ellipsis"></i></button>
+                            <div class="card-dropdown">
+                                <button class="card-action" data-action="edit">Редактировать</button>
+                                <button class="card-action" data-action="duplicate">Дублировать</button>
+                                <button class="card-action" data-action="hide">Скрыть</button>
+                                <button class="card-action danger" data-action="delete">Удалить</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="tel:{{ ph_clean }}" class="social-card-link">
+                            <i class="fas fa-phone"></i>
+                            <span>Номер телефона</span>
+                        </a>
+                    </div>
+                    {% endwith %}
+                    {% else %}
                     <div class="social-card phone" data-type="phone" data-value="{{ ph }}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
                         {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
                         {% if is_owner %}
@@ -308,6 +330,7 @@
                             <span>Номер телефона</span>
                         </a>
                     </div>
+                    {% endif %}
                     {% endfor %}
 
                     {% for em in profile.email_list %}
@@ -355,7 +378,7 @@
                     <!-- Пользовательские виджеты в том же стиле -->
                     {% for widget in profile.widgets.all %}
                         {% if widget.is_active or is_owner %}
-                            <div class="social-card {% if not widget.is_active %}inactive{% endif %}" data-type="widget" data-widget-id="{{ widget.id }}" data-original-color="{{ widget.color }}" style="{% if widget.is_active %}background-color: {{ widget.color }};{% else %}background-color: #D9D9D9;{% endif %}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
+                            <div class="social-card {% if not widget.is_active %}inactive{% endif %}" data-type="widget" data-value="{{ widget.content }}" data-widget-id="{{ widget.id }}" data-original-color="{{ widget.color }}" style="{% if widget.is_active %}background-color: {{ widget.color }};{% else %}background-color: #D9D9D9;{% endif %}" draggable="{% if is_owner %}true{% else %}false{% endif %}">
                                 {% if is_owner %}<div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>{% endif %}
                                 {% if is_owner %}
                                 <div class="card-menu">
@@ -378,10 +401,19 @@
                                         <span>{{ widget.title }}</span>
                                     </a>
                                 {% elif widget.widget_type == 'social' %}
-                                    <a href="{{ widget.content }}" target="_blank" rel="noopener noreferrer" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
-                                        <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
-                                        <span>{{ widget.title }}</span>
-                                    </a>
+                                    {% if widget.content|slice:":9" == "whatsapp:" %}
+                                        {% with wa_num=widget.content|slice:"9:" %}
+                                            <a href="https://wa.me/{{ wa_num|cut:'+' }}" target="_blank" rel="noopener noreferrer" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                                <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
+                                                <span>{{ widget.title }}</span>
+                                            </a>
+                                        {% endwith %}
+                                    {% else %}
+                                        <a href="{{ widget.content }}" target="_blank" rel="noopener noreferrer" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
+                                            <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
+                                            <span>{{ widget.title }}</span>
+                                        </a>
+                                    {% endif %}
                                 {% elif widget.widget_type == 'contact' %}
                                     <a href="{{ widget.content }}" class="social-card-link {% if not widget.is_active %}disabled-link{% endif %}">
                                         <i class="{% if widget.is_active %}{{ widget.icon }}{% else %}fas fa-eye-slash{% endif %}" data-active-icon="{{ widget.icon }}"></i>
@@ -559,10 +591,12 @@
                 const phones = [];
                 const whatsappPhones = [];
                 const emails = [];
-                const urls = [];
-                const typedUrls = [];      // URL;TYPE=instagram:..., URL;TYPE=telegram:...
+                const urls = [];           // только реальные сайты (website) и прочие ссылки НЕ-соцсетей
+                const instagramUrls = [];  // отдельный список Instagram-профилей для красивого отображения
+                const locationUrls = [];   // ссылки на карты (Яндекс, Google, 2ГИС и т.п.) для блока "Местоположение"
+                const labeledUrls = [];    // любые другие кнопки-ссылки с понятной подписью (банки, оплата, файлы и т.п.)
                 const impps = [];          // IMPP;X-SERVICE=WhatsApp:..., IMPP:tg://...
-                const socialProfiles = []; // X-SOCIALPROFILE;type=instagram:...
+                const socialProfiles = []; // X-SOCIALPROFILE / SOCIALPROFILE
                 const otherNotes = [];
 
                 // Нормализация телефонов:
@@ -573,6 +607,10 @@
                 function normalizePhone(raw) {
                     if (!raw) return raw;
                     let s = String(raw).trim();
+                    // убрать возможные схемы из значения (иногда в базе/виджетах хранится tel:+..., whatsapp:+...)
+                    if (s.toLowerCase().startsWith('tel:')) s = s.slice(4);
+                    if (s.toLowerCase().startsWith('whatsapp:')) s = s.slice('whatsapp:'.length);
+                    if (s.toLowerCase().startsWith('sms:')) s = s.slice(4);
                     // убираем пробелы, скобки и дефисы
                     s = s.replace(/[()\s-]/g, '');
                     if (s.startsWith('00')) {
@@ -612,7 +650,12 @@
 
                         // Email
                         if (type === 'email' || href.startsWith('mailto:')) {
-                            const email = value || href.slice('mailto:'.length);
+                            let email = (value || href || '').trim();
+                            // Убираем возможный префикс mailto: независимо от того,
+                            // попал он в data-value или только в href
+                            if (email.toLowerCase().startsWith('mailto:')) {
+                                email = email.slice('mailto:'.length);
+                            }
                             pushUnique(emails, email);
                             return;
                         }
@@ -621,11 +664,12 @@
                         if (type === 'telegram' && (value || href)) {
                             const username = (value || href.replace(/^https?:\/\/t\.me\//i, '')).replace(/^@/, '');
                             const profileUrl = href || ('https://t.me/' + username);
-                            pushUnique(urls, profileUrl);
+                            // iOS часто отображает URL как "веб‑сайт". Для соцсетей в контактах
+                            // используем X-SOCIALPROFILE/IMPP, а не общий URL.
                             // Специализированные поля для Telegram
-                            pushUnique(typedUrls, `URL;TYPE=telegram:${profileUrl}`);
                             pushUnique(impps, `IMPP:tg://resolve?domain=${username}`);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=telegram:${profileUrl}`);
+                            pushUnique(socialProfiles, `SOCIALPROFILE;type=telegram:${profileUrl}`);
                             return;
                         }
 
@@ -647,27 +691,36 @@
                         }
 
                         if (type === 'instagram' && (value || href)) {
-                            const username = (value || href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')).replace(/^@/, '');
-                            const profileUrl = href || ('https://instagram.com/' + username);
-                            pushUnique(urls, profileUrl);
-                            pushUnique(typedUrls, `URL;TYPE=instagram:${profileUrl}`);
-                            pushUnique(socialProfiles, `X-SOCIALPROFILE;type=instagram:${profileUrl}`);
+                            // Приводим к единому виду:
+                            // - если введён логин (@user или user) → используем его
+                            // - если введена ссылка https://instagram.com/user → вырезаем домен
+                            let raw = (value || href || '').trim();
+                            raw = raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+                            raw = raw.replace(/^@/, '');
+                            const username = raw;
+                            if (!username) {
+                                // Пустой логин — не добавляем пустой Instagram в контакт
+                                return;
+                            }
+                            const profileUrl = 'https://instagram.com/' + username;
+                            // Запоминаем только URL Instagram, без X-SOCIALPROFILE,
+                            // чтобы в контактах был один верхний блок "Instagram" (как сайт)
+                            // и не появлялся дополнительный нижний Instagram-профиль.
+                            pushUnique(instagramUrls, profileUrl);
                             return;
                         }
 
                         if (type === 'facebook' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(urls, profileUrl);
-                            pushUnique(typedUrls, `URL;TYPE=facebook:${profileUrl}`);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=facebook:${profileUrl}`);
+                            pushUnique(socialProfiles, `SOCIALPROFILE;type=facebook:${profileUrl}`);
                             return;
                         }
 
                         if (type === 'linkedin' && (value || href)) {
                             const profileUrl = value || href;
-                            pushUnique(urls, profileUrl);
-                            pushUnique(typedUrls, `URL;TYPE=linkedin:${profileUrl}`);
                             pushUnique(socialProfiles, `X-SOCIALPROFILE;type=linkedin:${profileUrl}`);
+                            pushUnique(socialProfiles, `SOCIALPROFILE;type=linkedin:${profileUrl}`);
                             return;
                         }
 
@@ -678,6 +731,103 @@
 
                         // Виджеты контактов: добавляем всё, что не распознали выше, в заметки
                         if (type === 'widget' && href) {
+                            // Поддержка новых хранилищных схем (например whatsapp:+7701...)
+                            if (value && value.toLowerCase().startsWith('whatsapp:')) {
+                                let number = value.slice('whatsapp:'.length);
+                                number = normalizePhone(number);
+                                pushUnique(whatsappPhones, number);
+                                return;
+                            }
+
+                            // Если это ссылка/контакт — кладём в правильные поля, а не в NOTE
+                            // 1) Сначала обрабатываем карты (Яндекс, Google, 2ГИС) как отдельный тип "местоположение"
+                            if (/^https?:\/\/(www\.)?yandex\.(ru|com)\/maps\//i.test(href)
+                                || /^https?:\/\/(www\.)?maps\.google\.com\//i.test(href)
+                                || /^https?:\/\/(www\.)?google\.[^/]+\/maps\//i.test(href)
+                                || /^https?:\/\/(www\.)?2gis\.(ru|com)\//i.test(href)) {
+                                pushUnique(locationUrls, href);
+                                return;
+                            }
+
+                            // 2) Остальные случаи — телефоны, почта, мессенджеры, обычные сайты
+                            if (href.startsWith('tel:')) {
+                                let phoneNumber = href.slice(4);
+                                phoneNumber = normalizePhone(phoneNumber);
+                                pushUnique(phones, phoneNumber);
+                                return;
+                            }
+                            if (href.startsWith('sms:')) {
+                                // Кнопка SMS: берём номер и добавляем как обычный телефон,
+                                // чтобы он был в разделе телефонов контакта.
+                                let phoneNumber = href.slice(4);
+                                phoneNumber = normalizePhone(phoneNumber);
+                                pushUnique(phones, phoneNumber);
+                                return;
+                            }
+                            if (href.startsWith('mailto:')) {
+                                const email = href.slice('mailto:'.length);
+                                pushUnique(emails, email);
+                                return;
+                            }
+                            if (/^https?:\/\/wa\.me\//i.test(href)) {
+                                let number = href.replace(/^https?:\/\/wa\.me\//i, '');
+                                number = normalizePhone(number);
+                                pushUnique(whatsappPhones, number);
+                                return;
+                            }
+                            if (/^https?:\/\/t\.me\//i.test(href)) {
+                                const username = href.replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '');
+                                const profileUrl = 'https://t.me/' + username;
+                                pushUnique(impps, `IMPP:tg://resolve?domain=${username}`);
+                                pushUnique(socialProfiles, `X-SOCIALPROFILE;type=telegram:${profileUrl}`);
+                                pushUnique(socialProfiles, `SOCIALPROFILE;type=telegram:${profileUrl}`);
+                                return;
+                            }
+                            // Viber (кнопка "Viber" и "Viber группа") — сохраняем как мессенджер
+                            if (/^viber:\/\/chat\?number=/i.test(href)) {
+                                let number = href.replace(/^viber:\/\/chat\?number=/i, '');
+                                number = normalizePhone(number);
+                                if (number) {
+                                    pushUnique(impps, `IMPP;X-SERVICE=Viber:viber://chat?number=${number}`);
+                                }
+                                return;
+                            }
+                            // Skype
+                            if (/^skype:/i.test(href)) {
+                                const id = href.replace(/^skype:/i, '');
+                                if (id) {
+                                    pushUnique(impps, `IMPP;X-SERVICE=Skype:skype:${id}`);
+                                }
+                                return;
+                            }
+                            if (/^https?:\/\/(www\.)?instagram\.com\//i.test(href)) {
+                                // Вырезаем домен и получаем логин
+                                let username = href.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').trim();
+                                if (!username) {
+                                    return;
+                                }
+                                const profileUrl = 'https://instagram.com/' + username;
+                                // Аналогично: только URL, без X-SOCIALPROFILE
+                                pushUnique(instagramUrls, profileUrl);
+                                return;
+                            }
+                            if (/^https?:\/\//i.test(href)) {
+                                pushUnique(urls, href);
+                                return;
+                            }
+
+                            // Фолбэк: если это обычная ссылка, но мы не распознали спец-тип
+                            // (банки, оплата, файлы, соцсети и т.п.), кладём её как подписанный URL,
+                            // чтобы в контакте была понятная строка вида "Сбер", "Kaspi", "YCLIENTS" и т.д.
+                            if (/^https?:\/\//i.test(href)) {
+                                labeledUrls.push({
+                                    url: href,
+                                    label: label || 'Ссылка'
+                                });
+                                return;
+                            }
+
+                            // Самый последний фолбэк: только если вообще не URL — в заметки
                             const noteLabel = label || 'Контакт';
                             pushUnique(otherNotes, `${noteLabel}: ${href}`);
                         }
@@ -749,18 +899,17 @@
                     }
                 });
 
-                // Номера WhatsApp: добавляем как отдельные телефоны с меткой и IMPP
+                // Номера WhatsApp: НЕ добавляем в TEL (чтобы не попадало в "сотовый" у iOS),
+                // добавляем только как IMPP (мессенджер).
                 whatsappPhones.forEach(ph => {
                     if (ph) {
-                        const normalized = normalizePhone(ph);
+                        let normalized = normalizePhone(ph);
                         if (!normalized) return;
-                        if (!telSet.has(normalized)) {
-                            telSet.add(normalized);
-                            // Дублируем как обычный мобильный, если его ещё нет
-                            lines.push(`TEL;TYPE=CELL:${normalized}`);
+                        // Для WhatsApp в контактах хотим всегда видеть международный формат с "+".
+                        if (!normalized.startsWith('+')) {
+                            normalized = '+' + normalized;
                         }
-                        // Явная пометка как WhatsApp
-                        lines.push(`TEL;TYPE=CELL;X-ABLabel=WhatsApp:${normalized}`);
+                        // IMPP добавляем всегда
                         lines.push(`IMPP;X-SERVICE=WhatsApp:whatsapp:${normalized}`);
                     }
                 });
@@ -777,11 +926,34 @@
                     }
                 });
 
-                // Типизированные URL для соцсетей (URL;TYPE=instagram:..., URL;TYPE=telegram:...)
-                typedUrls.forEach(u => {
-                    if (u) {
-                        lines.push(u);
-                    }
+                // Добавляем ссылки на карты как отдельные URL с подписью "Местоположение",
+                // чтобы 2ГИС, Яндекс и Google Карты попадали в правильный блок контакта.
+                let locItemIndex = 1;
+                locationUrls.forEach(u => {
+                    if (!u) return;
+                    const item = `itemLOC${locItemIndex++}`;
+                    lines.push(`${item}.URL;type=pref:${u}`);
+                    lines.push(`${item}.X-ABLabel:Местоположение`);
+                });
+
+                // Подписанные ссылки для всех остальных кнопок (оплата, файлы, сервисы и т.п.)
+                let labeledItemIndex = 1;
+                labeledUrls.forEach(entry => {
+                    if (!entry || !entry.url) return;
+                    const item = `itemL${labeledItemIndex++}`;
+                    const safeLabel = (entry.label || 'Ссылка').replace(/\r?\n/g, ' ');
+                    lines.push(`${item}.URL;type=pref:${entry.url}`);
+                    lines.push(`${item}.X-ABLabel:${safeLabel}`);
+                });
+
+                // Добавляем Instagram как отдельные URL с подписью "Instagram" (Apple-расширение X-ABLabel),
+                // чтобы в контактах было видно, КУДА ведёт ссылка.
+                let igItemIndex = 1;
+                instagramUrls.forEach(u => {
+                    if (!u) return;
+                    const item = `itemIG${igItemIndex++}`;
+                    lines.push(`${item}.URL;type=pref:${u}`);
+                    lines.push(`${item}.X-ABLabel:Instagram`);
                 });
 
                 // Добавляем мессенджеры как IMPP (поле "Мессенджер" у iOS)
