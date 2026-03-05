@@ -539,8 +539,15 @@ p  { color: var(--gray-700); font-size: 16px; }
         padding-right: 56px;
     }
     .social-card span {
+        max-width: 125px !important;
+        font-size: 0.794rem !important;
+    }
+}
+
+@media (max-width: 359px) {
+
+    .social-card span {
         max-width: 100px !important;
-        width: 100%;
     }
 }
 
@@ -863,8 +870,12 @@ p  { color: var(--gray-700); font-size: 16px; }
     .desktop-only {
         display: none !important;
     }
+
+    .social-card-link {
+        gap: 0.5rem;
+    }
     .social-card span {
-        font-size: 1rem;
+        font-size: 0.875rem;
         font-weight: 600;
         display: block;
         flex: 1 1 auto;
@@ -872,7 +883,7 @@ p  { color: var(--gray-700); font-size: 16px; }
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        max-width: 161px;
+        max-width: 163px;
         width: 100%;
     }
 }
