@@ -499,8 +499,9 @@ p  { color: var(--gray-700); font-size: 16px; }
 .contact-value {
     font-size: 1rem;
     font-weight: 500;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     max-width: 100%;
 }
 
@@ -521,8 +522,12 @@ p  { color: var(--gray-700); font-size: 16px; }
     min-width: 0;
 }
 .social-card span {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* На узких экранах уменьшаем внутренние отступы, чтобы избежать переполнения */
@@ -532,6 +537,10 @@ p  { color: var(--gray-700); font-size: 16px; }
     }
     .social-card-link {
         padding-right: 56px;
+    }
+    .social-card span {
+        max-width: 100px !important;
+        width: 100%;
     }
 }
 
@@ -551,6 +560,8 @@ p  { color: var(--gray-700); font-size: 16px; }
     overflow: visible; /* не обрезать выпадающее меню */
     z-index: 1; /* базовый слой над соседями */
     cursor: default;
+    width: 100%;
+    max-width: 686px;
 }
 
 .social-card:hover {
@@ -578,6 +589,14 @@ p  { color: var(--gray-700); font-size: 16px; }
 .social-card span {
     font-size: 1rem;
     font-weight: 600;
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 507px;
+    width: 100%;
 }
 
 .social-card-link {
@@ -587,6 +606,10 @@ p  { color: var(--gray-700); font-size: 16px; }
     color: white;
     text-decoration: none;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     padding-right: 72px; /* reserve space for right drag handle + menu */
 }
 
@@ -839,6 +862,18 @@ p  { color: var(--gray-700); font-size: 16px; }
 @media (max-width: 768px) {
     .desktop-only {
         display: none !important;
+    }
+    .social-card span {
+        font-size: 1rem;
+        font-weight: 600;
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 161px;
+        width: 100%;
     }
 }
 

@@ -356,6 +356,7 @@ body {
     color: white;
     font-weight: 500;
     transition: all 0.2s ease;
+    overflow: hidden; /* не даём тексту растягивать кнопку */
 }
 
 .social-card:hover {
@@ -364,6 +365,17 @@ body {
 
 .social-card i {
     font-size: 1.25rem;
+}
+
+/* Текст внутри кнопок соц.сетей / контактов */
+.social-card span {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .social-card.telegram { background: #0088cc; }
